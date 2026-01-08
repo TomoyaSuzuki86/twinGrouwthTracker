@@ -27,21 +27,21 @@ export function renderGrowthChart(canvas, visits, statsMap) {
       labels,
       datasets: [
         {
-          label: "A EFW (g)",
+          label: "A 推定体重 (g)",
           data: aData,
           borderColor: "#c6492f",
           backgroundColor: "rgba(198, 73, 47, 0.2)",
           tension: 0.2
         },
         {
-          label: "B EFW (g)",
+          label: "B 推定体重 (g)",
           data: bData,
           borderColor: "#1b4d6b",
           backgroundColor: "rgba(27, 77, 107, 0.2)",
           tension: 0.2
         },
         {
-          label: "Discordance (%)",
+          label: "体重差 (%)",
           data: dData,
           borderColor: "#3c1f22",
           backgroundColor: "rgba(60, 31, 34, 0.2)",
@@ -50,7 +50,7 @@ export function renderGrowthChart(canvas, visits, statsMap) {
           tension: 0.2
         },
         {
-          label: "Ideal (mean)",
+          label: "理想体重（平均）",
           data: idealData,
           borderColor: "#7a6a60",
           backgroundColor: "rgba(122, 106, 96, 0.15)",

@@ -40,9 +40,9 @@ export function renderDetail(summaryEl, visit, stats) {
 
   summaryEl.innerHTML = `
     <div><strong>${escapeHtml(visit.date || "")}</strong> ${escapeHtml(visit.gaText || "")}</div>
-    <div>A EFW: ${formatNumber(visit?.fetuses?.A?.efwG)} g / B EFW: ${formatNumber(visit?.fetuses?.B?.efwG)} g</div>
+    <div>A 推定体重: ${formatNumber(visit?.fetuses?.A?.efwG)} g / B 推定体重: ${formatNumber(visit?.fetuses?.B?.efwG)} g</div>
     <div>体重差: ${formatNumber(discord, 1)}%</div>
-    <div>理想体重: ${formatNumber(ideal)} g (A ${formatSigned(aDelta)} g, B ${formatSigned(bDelta)} g)</div>
+    <div>理想体重（平均）: ${formatNumber(ideal)} g (A ${formatSigned(aDelta)} g, B ${formatSigned(bDelta)} g)</div>
     <div>前回比/日: A ${formatNumber(aPerDay, 1)} g/day, B ${formatNumber(bPerDay, 1)} g/day</div>
     <div>メモ: ${escapeHtml(visit.memo || "")}</div>
   `;
