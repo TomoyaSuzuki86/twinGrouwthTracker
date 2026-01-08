@@ -16,6 +16,10 @@ export function renderGrowthChart(canvas, visits, statsMap) {
     const stats = statsMap.get(visit.id);
     return stats ? Number(stats.discordance.toFixed(1)) : null;
   });
+  const idealData = ordered.map((visit) => {
+    const stats = statsMap.get(visit.id);
+    return stats?.idealEfw ?? null;
+  });
 
   chartInstance = new Chart(canvas, {
     type: "line",
@@ -43,6 +47,14 @@ export function renderGrowthChart(canvas, visits, statsMap) {
           backgroundColor: "rgba(60, 31, 34, 0.2)",
           borderDash: [6, 4],
           yAxisID: "y2",
+          tension: 0.2
+        },
+        {
+          label: "Ideal (mean)",
+          data: idealData,
+          borderColor: "#7a6a60",
+          backgroundColor: "rgba(122, 106, 96, 0.15)",
+          borderDash: [4, 6],
           tension: 0.2
         }
       ]
