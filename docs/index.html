@@ -1,0 +1,203 @@
+﻿<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ETwin Growth Tracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Unbounded:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="bg"></div>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">ET</span>
+      <div>
+        <div class="brand-title">Twin Growth Tracker</div>
+        <div class="brand-sub">ETwin Clinic Notes</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="btn-settings" class="btn ghost">設定</button>
+      <button id="btn-add" class="btn">+ 追加</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="view-setup" class="view">
+      <h1>家族を接続</h1>
+      <div class="card">
+        <div class="two-col">
+          <div>
+            <h2>家族を作る</h2>
+            <p class="muted">新しい家族IDを作成します。あとで招待リンクを共有できます。</p>
+            <button id="btn-create-family" class="btn">家族を作る</button>
+          </div>
+          <div>
+            <h2>家族に参加</h2>
+            <p class="muted">家族IDまたは招待リンクから参加します。</p>
+            <label class="field">
+              <span>家族ID</span>
+              <input id="input-family-id" type="text" placeholder="例: 7Q2D9A" />
+            </label>
+            <button id="btn-join-family" class="btn">参加する</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-list" class="view">
+      <div class="headline">
+        <h1>健診一覧</h1>
+        <div class="family-chip">
+          <span id="label-family-id">family</span>
+          <button id="btn-copy-link" class="btn ghost">招待リンク</button>
+        </div>
+      </div>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>週数</th>
+              <th>A EFW(g)</th>
+              <th>B EFW(g)</th>
+              <th>差(%)</th>
+            </tr>
+          </thead>
+          <tbody id="visits-table"></tbody>
+        </table>
+        <div id="empty-state" class="empty">まだデータがありません。右上の追加から入力してください。</div>
+      </div>
+    </section>
+
+    <section id="view-form" class="view">
+      <div class="headline">
+        <h1 id="form-title">健診を追加</h1>
+        <div>
+          <button id="btn-cancel-form" class="btn ghost">戻る</button>
+        </div>
+      </div>
+      <form id="visit-form" class="card">
+        <div class="two-col">
+          <label class="field">
+            <span>日付</span>
+            <input name="date" type="date" required />
+          </label>
+          <label class="field">
+            <span>週数</span>
+            <input name="gaText" type="text" placeholder="例: 22w1d" />
+          </label>
+          <label class="field">
+            <span>子宮頸管(cm)</span>
+            <input name="cervixCm" type="number" step="0.1" />
+          </label>
+          <label class="field">
+            <span>メモ</span>
+            <input name="memo" type="text" placeholder="気になること" />
+          </label>
+        </div>
+
+        <div class="divider">Fetus A</div>
+        <div class="grid">
+          <label class="field">
+            <span>BPD(mm)</span>
+            <input name="A_bpdMm" type="number" step="0.1" />
+          </label>
+          <label class="field">
+            <span>AC(mm)</span>
+            <input name="A_acMm" type="number" step="0.1" />
+          </label>
+          <label class="field">
+            <span>FL(mm)</span>
+            <input name="A_flMm" type="number" step="0.1" />
+          </label>
+          <label class="field">
+            <span>EFW(g)</span>
+            <input name="A_efwG" type="number" step="1" />
+          </label>
+        </div>
+
+        <div class="divider">Fetus B</div>
+        <div class="grid">
+          <label class="field">
+            <span>BPD(mm)</span>
+            <input name="B_bpdMm" type="number" step="0.1" />
+          </label>
+          <label class="field">
+            <span>AC(mm)</span>
+            <input name="B_acMm" type="number" step="0.1" />
+          </label>
+          <label class="field">
+            <span>FL(mm)</span>
+            <input name="B_flMm" type="number" step="0.1" />
+          </label>
+          <label class="field">
+            <span>EFW(g)</span>
+            <input name="B_efwG" type="number" step="1" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn">保存</button>
+          <button id="btn-delete" type="button" class="btn danger">削除</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="view-detail" class="view">
+      <div class="headline">
+        <h1>詳細</h1>
+        <div>
+          <button id="btn-edit" class="btn">編集</button>
+          <button id="btn-back" class="btn ghost">戻る</button>
+        </div>
+      </div>
+      <div class="card">
+        <div id="detail-summary" class="summary"></div>
+        <canvas id="growth-chart" height="160"></canvas>
+      </div>
+    </section>
+
+    <section id="view-settings" class="view">
+      <div class="headline">
+        <h1>設定</h1>
+        <div>
+          <button id="btn-close-settings" class="btn ghost">戻る</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="two-col">
+          <div>
+            <h2>エクスポート</h2>
+            <p class="muted">現在の家族データをJSONでダウンロードします。</p>
+            <button id="btn-export" class="btn">エクスポート</button>
+          </div>
+          <div>
+            <h2>インポート</h2>
+            <p class="muted">JSONファイルを取り込みます。重複IDは上書きします。</p>
+            <input id="input-import" type="file" accept="application/json" />
+          </div>
+        </div>
+
+        <div class="divider">安全ロック</div>
+        <label class="field inline">
+          <input id="toggle-lock" type="checkbox" />
+          <span>削除などの操作にロックコードを要求</span>
+        </label>
+        <label class="field">
+          <span>ロックコード</span>
+          <input id="input-lock-code" type="text" placeholder="0817" />
+        </label>
+        <button id="btn-leave-family" class="btn ghost">家族を切り替える</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</body>
+</html>

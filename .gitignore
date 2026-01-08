@@ -1,0 +1,10 @@
+﻿# Local Firebase logs
+firebase-debug.log
+
+# Generated SDK config (intermediate)
+docs/sdkconfig.json
+
+# Common noise
+.DS_Store
+node_modules/
+.firebase/
