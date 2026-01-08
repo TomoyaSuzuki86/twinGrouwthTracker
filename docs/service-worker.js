@@ -10,7 +10,8 @@ const ASSETS = [
   "./ui.js",
   "./calc.js",
   "./chart.js",
-  "./manifest.json"
+  "./manifest.json",
+  "./favicon.svg"
 ];
 
 self.addEventListener("install", (event) => {
