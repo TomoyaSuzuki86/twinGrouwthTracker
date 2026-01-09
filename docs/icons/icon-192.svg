@@ -1,7 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" fill="#e7a450"/>
-  <rect x="32" y="46" width="64" height="20" fill="#ffffff"/>
-  <rect x="54" y="46" width="20" height="76" fill="#ffffff"/>
-  <rect x="96" y="46" width="64" height="20" fill="#ffffff"/>
-  <rect x="118" y="46" width="20" height="76" fill="#ffffff"/>
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#2f6b6f"/>
+      <stop offset="1" stop-color="#5c7c96"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="36" fill="url(#g)"/>
+  <circle cx="72" cy="86" r="30" fill="#ffffff"/>
+  <circle cx="120" cy="86" r="30" fill="#ffffff" opacity="0.9"/>
+  <rect x="58" y="122" width="76" height="16" rx="8" fill="#ffffff"/>
 </svg>
