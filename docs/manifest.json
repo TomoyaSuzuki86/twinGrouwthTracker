@@ -3,8 +3,8 @@
   "short_name": "ETwin",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#f4efe7",
-  "theme_color": "#c6492f",
+  "background_color": "#f4f1ea",
+  "theme_color": "#e7a450",
   "icons": [
     {
       "src": "icons/icon-192.svg",
