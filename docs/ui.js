@@ -42,12 +42,12 @@ export function renderDetail(summaryEl, visit, stats, dueDate) {
 
   summaryEl.innerHTML = `
     <div><strong>${escapeHtml(visit.date || "")}</strong> ${escapeHtml(gaText)}</div>
-    <div>A ????(EFW)[g]: ${formatNumber(visit?.fetuses?.A?.efwG)} / B ????(EFW)[g]: ${formatNumber(visit?.fetuses?.B?.efwG)}</div>
-    <div>??: A ??(BPD)[mm] ${formatNumber(visit?.fetuses?.A?.bpdMm, 1)} / ???(OFD)[mm] ${formatNumber(visit?.fetuses?.A?.ofdMm, 1)} / ??(HC)[mm] ${formatNumber(visit?.fetuses?.A?.hcMm, 1)} ? B ??(BPD)[mm] ${formatNumber(visit?.fetuses?.B?.bpdMm, 1)} / ???(OFD)[mm] ${formatNumber(visit?.fetuses?.B?.ofdMm, 1)} / ??(HC)[mm] ${formatNumber(visit?.fetuses?.B?.hcMm, 1)}</div>
-    <div>???(%): ${formatNumber(discord, 1)}%</div>
-    <div>????????[g]: ${formatNumber(ideal)} (A ${formatSigned(aDelta)} g, B ${formatSigned(bDelta)} g)</div>
-    <div>???/?[g]: A ${formatNumber(aPerDay, 1)} g/day, B ${formatNumber(bPerDay, 1)} g/day</div>
-    <div>??: ${escapeHtml(visit.memo || "")}</div>
+    <div>A 推定体重(EFW)[g]: ${formatNumber(visit?.fetuses?.A?.efwG)} / B 推定体重(EFW)[g]: ${formatNumber(visit?.fetuses?.B?.efwG)}</div>
+    <div>頭部: A 横幅(BPD)[mm] ${formatNumber(visit?.fetuses?.A?.bpdMm, 1)} / 前後長(OFD)[mm] ${formatNumber(visit?.fetuses?.A?.ofdMm, 1)} / 頭囲(HC)[mm] ${formatNumber(visit?.fetuses?.A?.hcMm, 1)} ・ B 横幅(BPD)[mm] ${formatNumber(visit?.fetuses?.B?.bpdMm, 1)} / 前後長(OFD)[mm] ${formatNumber(visit?.fetuses?.B?.ofdMm, 1)} / 頭囲(HC)[mm] ${formatNumber(visit?.fetuses?.B?.hcMm, 1)}</div>
+    <div>体重差(%): ${formatNumber(discord, 1)}%</div>
+    <div>理想体重（平均）[g]: ${formatNumber(ideal)} (A ${formatSigned(aDelta)} g, B ${formatSigned(bDelta)} g)</div>
+    <div>前回比/日[g]: A ${formatNumber(aPerDay, 1)} g/day, B ${formatNumber(bPerDay, 1)} g/day</div>
+    <div>メモ: ${escapeHtml(visit.memo || "")}</div>
   `;
 }
 
