@@ -14,7 +14,7 @@ export function renderGrowthChart(canvas, visits, statsMap) {
   const bData = ordered.map((visit) => (visit?.fetuses?.B?.efwG ? Number(visit.fetuses.B.efwG) : null));
   const dData = ordered.map((visit) => {
     const stats = statsMap.get(visit.id);
-    return stats ? Number(stats.discordance.toFixed(1)) : null;
+    return stats && stats.discordance !== null ? Number(stats.discordance.toFixed(1)) : null;
   });
   const idealData = ordered.map((visit) => {
     const stats = statsMap.get(visit.id);
@@ -49,7 +49,8 @@ export function renderGrowthChart(canvas, visits, statsMap) {
           backgroundColor: "rgba(60, 31, 34, 0.2)",
           borderDash: [6, 4],
           yAxisID: "y2",
-          tension: 0.2
+          tension: 0.2,
+          spanGaps: true
         },
         {
           label: "理想体重（平均）",
