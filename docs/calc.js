@@ -26,7 +26,7 @@ export function calcPerDay(current, previous, days) {
   return (curr - prev) / days;
 }
 
-export function buildVisitStats(visits) {
+export function buildVisitStats(visits, dueDate) {
   const stats = new Map();
   const byDate = [...visits].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
 
@@ -36,7 +36,7 @@ export function buildVisitStats(visits) {
     const days = prev ? dayDiff(prev.date, current.date) : null;
     const aPerDay = prev ? calcPerDay(current?.fetuses?.A?.efwG, prev?.fetuses?.A?.efwG, days) : null;
     const bPerDay = prev ? calcPerDay(current?.fetuses?.B?.efwG, prev?.fetuses?.B?.efwG, days) : null;
-    const gaWeeks = parseGaText(current?.gaText);
+    const gaWeeks = dueDate ? gaWeeksFromDates(current?.date, dueDate) : parseGaText(current?.gaText);
     const idealEfw = gaWeeks !== null ? idealWeightForWeeks(gaWeeks) : null;
     const aEfw = toNumber(current?.fetuses?.A?.efwG);
     const bEfw = toNumber(current?.fetuses?.B?.efwG);
@@ -56,12 +56,12 @@ export function buildVisitStats(visits) {
 }
 
 function dayDiff(dateA, dateB) {
-  if (!dateA || !dateB) {
+  const a = toUtcDateMs(dateA);
+  const b = toUtcDateMs(dateB);
+  if (a === null || b === null) {
     return null;
   }
-  const a = new Date(dateA);
-  const b = new Date(dateB);
-  const diffMs = b.getTime() - a.getTime();
+  const diffMs = b - a;
   if (!Number.isFinite(diffMs)) {
     return null;
   }
@@ -130,4 +130,54 @@ export function idealWeightForWeeks(weeks) {
   }
   const ratio = (weeks - floorWeek) / (ceilWeek - floorWeek);
   return floorVal + (ceilVal - floorVal) * ratio;
+}
+
+export function gaTextFromDates(visitDate, dueDate) {
+  const gaDays = gaDaysFromDates(visitDate, dueDate);
+  if (gaDays === null) {
+    return null;
+  }
+  const weeks = Math.floor(gaDays / 7);
+  const days = gaDays % 7;
+  if (weeks < 0 || days < 0) {
+    return null;
+  }
+  return `${weeks}w${days}d`;
+}
+
+export function gaWeeksFromDates(visitDate, dueDate) {
+  const gaDays = gaDaysFromDates(visitDate, dueDate);
+  if (gaDays === null) {
+    return null;
+  }
+  return gaDays / 7;
+}
+
+function gaDaysFromDates(visitDate, dueDate) {
+  const diff = dayDiff(visitDate, dueDate);
+  if (diff === null) {
+    return null;
+  }
+  const total = 280 - diff;
+  if (!Number.isFinite(total)) {
+    return null;
+  }
+  return total;
+}
+
+function toUtcDateMs(dateText) {
+  if (!dateText) {
+    return null;
+  }
+  const parts = String(dateText).split("-");
+  if (parts.length !== 3) {
+    return null;
+  }
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return null;
+  }
+  return Date.UTC(year, month - 1, day);
 }

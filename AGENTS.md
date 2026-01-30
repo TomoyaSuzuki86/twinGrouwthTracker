@@ -235,7 +235,7 @@ service cloud.firestore {
   - export: families/{familyId}/visits 全件をJSONでダウンロード
   - import: JSONを検証してFirestoreへ反映（重複は上書きでOK）
 - localStorage：
-  - ttt_family_id / ttt_lock_enabled / ttt_lock_code（初期0817）だけ
+  - ttt_family_id / ttt_lock_enabled / ttt_lock_code（初期0817）/ ttt_due_date
 
 ---
 

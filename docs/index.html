@@ -89,10 +89,10 @@
             <span>日付</span>
             <input name="date" type="date" required />
           </label>
-          <label class="field">
-            <span>週数</span>
-            <input name="gaText" type="text" placeholder="例: 22w1d" />
-          </label>
+          <div class="field readonly">
+            <span>週数（自動）</span>
+            <div id="derived-ga" class="readonly-value">-</div>
+          </div>
           <label class="field">
             <span>子宮頸管(mm)</span>
             <input name="cervixMm" type="number" step="0.1" />
@@ -200,6 +200,13 @@
             <input id="input-import" type="file" accept="application/json" />
           </div>
         </div>
+
+        <div class="divider">出産予定日</div>
+        <label class="field">
+          <span>出産予定日 (EDD)</span>
+          <input id="input-due-date" type="date" />
+        </label>
+        <p class="muted">日付を入力すると、健診日の週数が自動計算されます。</p>
 
         <div class="divider">安全ロック</div>
         <label class="field inline">

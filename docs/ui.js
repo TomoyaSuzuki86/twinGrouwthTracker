@@ -1,4 +1,4 @@
-﻿import { calcDiscordance } from "./calc.js";
+import { calcDiscordance, gaTextFromDates } from "./calc.js";
 
 export function setActiveView(viewId) {
   document.querySelectorAll(".view").forEach((el) => {
@@ -6,18 +6,19 @@ export function setActiveView(viewId) {
   });
 }
 
-export function renderVisits(tableBody, visits, statsMap) {
+export function renderVisits(tableBody, visits, statsMap, dueDate) {
   tableBody.innerHTML = "";
   if (!visits.length) {
     return;
   }
   for (const visit of visits) {
     const discord = statsMap?.get(visit.id)?.discordance ?? calcDiscordance(visit?.fetuses?.A?.efwG, visit?.fetuses?.B?.efwG);
+    const gaText = gaTextFromDates(visit?.date, dueDate) || visit?.gaText || "";
     const tr = document.createElement("tr");
     tr.dataset.id = visit.id;
     tr.innerHTML = `
       <td>${escapeHtml(visit.date || "")}</td>
-      <td>${escapeHtml(visit.gaText || "")}</td>
+      <td>${escapeHtml(gaText)}</td>
       <td>${formatNumber(visit?.fetuses?.A?.efwG)}</td>
       <td>${formatNumber(visit?.fetuses?.B?.efwG)}</td>
       <td>${formatNumber(discord, 1)}%</td>
@@ -26,12 +27,13 @@ export function renderVisits(tableBody, visits, statsMap) {
   }
 }
 
-export function renderDetail(summaryEl, visit, stats) {
+export function renderDetail(summaryEl, visit, stats, dueDate) {
   if (!visit) {
     summaryEl.innerHTML = "";
     return;
   }
   const discord = stats?.discordance ?? calcDiscordance(visit?.fetuses?.A?.efwG, visit?.fetuses?.B?.efwG);
+  const gaText = gaTextFromDates(visit?.date, dueDate) || visit?.gaText || "";
   const aPerDay = stats?.aPerDay;
   const bPerDay = stats?.bPerDay;
   const ideal = stats?.idealEfw;
@@ -39,7 +41,7 @@ export function renderDetail(summaryEl, visit, stats) {
   const bDelta = stats?.bDeltaFromIdeal;
 
   summaryEl.innerHTML = `
-    <div><strong>${escapeHtml(visit.date || "")}</strong> ${escapeHtml(visit.gaText || "")}</div>
+    <div><strong>${escapeHtml(visit.date || "")}</strong> ${escapeHtml(gaText)}</div>
     <div>A 推定体重: ${formatNumber(visit?.fetuses?.A?.efwG)} g / B 推定体重: ${formatNumber(visit?.fetuses?.B?.efwG)} g</div>
     <div>頭部: A BPD ${formatNumber(visit?.fetuses?.A?.bpdMm, 1)} / OFD ${formatNumber(visit?.fetuses?.A?.ofdMm, 1)} / HC ${formatNumber(visit?.fetuses?.A?.hcMm, 1)} mm ・ B BPD ${formatNumber(visit?.fetuses?.B?.bpdMm, 1)} / OFD ${formatNumber(visit?.fetuses?.B?.ofdMm, 1)} / HC ${formatNumber(visit?.fetuses?.B?.hcMm, 1)} mm</div>
     <div>体重差: ${formatNumber(discord, 1)}%</div>
@@ -55,7 +57,6 @@ export function fillForm(formEl, visit) {
     return;
   }
   formEl.date.value = visit.date || "";
-  formEl.gaText.value = visit.gaText || "";
   const cervixMm = visit.cervixMm ?? (Number.isFinite(visit.cervixCm) ? visit.cervixCm * 10 : null);
   formEl.cervixMm.value = cervixMm ?? "";
   formEl.memo.value = visit.memo || "";
@@ -78,7 +79,6 @@ export function fillForm(formEl, visit) {
 export function getFormData(formEl) {
   return {
     date: formEl.date.value,
-    gaText: formEl.gaText.value.trim(),
     cervixMm: toNumber(formEl.cervixMm.value),
     memo: formEl.memo.value.trim(),
     fetuses: {

@@ -10,12 +10,13 @@ import {
   importVisits
 } from "./store.js";
 import { setActiveView, renderVisits, renderDetail, fillForm, getFormData, setFamilyLabel } from "./ui.js";
-import { buildVisitStats } from "./calc.js";
+import { buildVisitStats, gaTextFromDates } from "./calc.js";
 import { renderGrowthChart } from "./chart.js";
 
 const LS_FAMILY = "ttt_family_id";
 const LS_LOCK_ENABLED = "ttt_lock_enabled";
 const LS_LOCK_CODE = "ttt_lock_code";
+const LS_DUE_DATE = "ttt_due_date";
 
 const state = {
   user: null,
@@ -23,7 +24,9 @@ const state = {
   visits: [],
   stats: new Map(),
   selectedId: null,
-  unsubscribe: null
+  unsubscribe: null,
+  dueDate: null,
+  editingVisit: null
 };
 
 const el = {
@@ -49,7 +52,9 @@ const el = {
   inputImport: document.getElementById("input-import"),
   toggleLock: document.getElementById("toggle-lock"),
   inputLockCode: document.getElementById("input-lock-code"),
-  btnLeaveFamily: document.getElementById("btn-leave-family")
+  btnLeaveFamily: document.getElementById("btn-leave-family"),
+  inputDueDate: document.getElementById("input-due-date"),
+  derivedGa: document.getElementById("derived-ga")
 };
 
 initFirebase(async (user) => {
@@ -83,6 +88,8 @@ el.btnLeaveFamily.addEventListener("click", () => leaveFamily());
 el.inputImport.addEventListener("change", (event) => handleImport(event));
 el.toggleLock.addEventListener("change", () => saveLockSettings());
 el.inputLockCode.addEventListener("change", () => saveLockSettings());
+el.inputDueDate.addEventListener("change", () => saveDueDate());
+el.form.date.addEventListener("change", () => updateDerivedGa());
 
 el.form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -90,6 +97,12 @@ el.form.addEventListener("submit", async (event) => {
   if (!data.date) {
     alert("日付を入力してください");
     return;
+  }
+  const derivedGa = gaTextFromDates(data.date, state.dueDate);
+  if (derivedGa) {
+    data.gaText = derivedGa;
+  } else if (state.editingVisit?.gaText) {
+    data.gaText = state.editingVisit.gaText;
   }
   const db = getDb();
   if (state.selectedId) {
@@ -157,7 +170,7 @@ function subscribe() {
   }
   state.unsubscribe = subscribeVisits(getDb(), state.familyId, (visits) => {
     state.visits = visits;
-    state.stats = buildVisitStats(visits);
+    state.stats = buildVisitStats(visits, state.dueDate);
     updateList();
     if (state.selectedId) {
       showDetail();
@@ -166,7 +179,7 @@ function subscribe() {
 }
 
 function updateList() {
-  renderVisits(el.tableBody, state.visits, state.stats);
+  renderVisits(el.tableBody, state.visits, state.stats, state.dueDate);
   el.empty.style.display = state.visits.length ? "none" : "block";
 }
 
@@ -190,9 +203,11 @@ function openForm() {
     return;
   }
   state.selectedId = null;
+  state.editingVisit = null;
   el.formTitle.textContent = "健診を追加";
   fillForm(el.form, null);
   el.btnDelete.style.display = "none";
+  updateDerivedGa();
   setActiveView("view-form");
 }
 
@@ -201,16 +216,18 @@ function editSelected() {
   if (!visit) {
     return;
   }
+  state.editingVisit = visit;
   el.formTitle.textContent = "健診を編集";
   fillForm(el.form, visit);
   el.btnDelete.style.display = "inline-flex";
+  updateDerivedGa();
   setActiveView("view-form");
 }
 
 function showDetail() {
   const visit = state.visits.find((item) => item.id === state.selectedId);
   const stats = state.stats.get(state.selectedId);
-  renderDetail(el.detailSummary, visit, stats);
+  renderDetail(el.detailSummary, visit, stats, state.dueDate);
   renderGrowthChart(el.chart, state.visits, state.stats);
   setActiveView("view-detail");
 }
@@ -270,13 +287,52 @@ function copyInviteLink() {
 function setupSettings() {
   const enabled = localStorage.getItem(LS_LOCK_ENABLED) === "true";
   const code = localStorage.getItem(LS_LOCK_CODE) || "0817";
+  const dueDate = localStorage.getItem(LS_DUE_DATE) || "";
   el.toggleLock.checked = enabled;
   el.inputLockCode.value = code;
+  el.inputDueDate.value = dueDate;
+  state.dueDate = dueDate || null;
+  refreshStats();
+  updateDerivedGa();
 }
 
 function saveLockSettings() {
   localStorage.setItem(LS_LOCK_ENABLED, String(el.toggleLock.checked));
   localStorage.setItem(LS_LOCK_CODE, el.inputLockCode.value || "0817");
+}
+
+function saveDueDate() {
+  const value = el.inputDueDate.value;
+  state.dueDate = value || null;
+  localStorage.setItem(LS_DUE_DATE, value || "");
+  refreshStats();
+  updateDerivedGa();
+}
+
+function refreshStats() {
+  if (!state.visits.length) {
+    return;
+  }
+  state.stats = buildVisitStats(state.visits, state.dueDate);
+  updateList();
+  if (state.selectedId) {
+    showDetail();
+  }
+}
+
+function updateDerivedGa() {
+  if (!el.derivedGa) {
+    return;
+  }
+  const visitDate = el.form?.date?.value;
+  const text = gaTextFromDates(visitDate, state.dueDate);
+  if (text) {
+    el.derivedGa.textContent = text;
+  } else if (state.dueDate) {
+    el.derivedGa.textContent = "-";
+  } else {
+    el.derivedGa.textContent = "出産予定日を設定してください";
+  }
 }
 
 function confirmLock() {
