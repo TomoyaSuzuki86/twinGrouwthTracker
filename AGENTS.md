@@ -73,7 +73,7 @@
 - families/{familyId}/visits/{visitId}
   - date: "YYYY-MM-DD"
   - gaText: "22w1d"
-  - cervixCm: number|null
+  - cervixMm: number|null
   - memo: string
   - fetuses:
     - A: { bpdMm, ofdMm, hcMm, bpdGaText, bpdSd, acMm, acGaText, acSd, flMm, flGaText, flSd, efwG, efwGaText, efwSd }

@@ -56,7 +56,8 @@ export function fillForm(formEl, visit) {
   }
   formEl.date.value = visit.date || "";
   formEl.gaText.value = visit.gaText || "";
-  formEl.cervixCm.value = visit.cervixCm ?? "";
+  const cervixMm = visit.cervixMm ?? (Number.isFinite(visit.cervixCm) ? visit.cervixCm * 10 : null);
+  formEl.cervixMm.value = cervixMm ?? "";
   formEl.memo.value = visit.memo || "";
 
   formEl.A_bpdMm.value = visit?.fetuses?.A?.bpdMm ?? "";
@@ -78,7 +79,7 @@ export function getFormData(formEl) {
   return {
     date: formEl.date.value,
     gaText: formEl.gaText.value.trim(),
-    cervixCm: toNumber(formEl.cervixCm.value),
+    cervixMm: toNumber(formEl.cervixMm.value),
     memo: formEl.memo.value.trim(),
     fetuses: {
       A: {
