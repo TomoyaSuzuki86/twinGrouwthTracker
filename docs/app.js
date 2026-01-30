@@ -206,6 +206,7 @@ function openForm() {
   state.editingVisit = null;
   el.formTitle.textContent = "健診を追加";
   fillForm(el.form, null);
+  el.form.date.value = todayDateString();
   el.btnDelete.style.display = "none";
   updateDerivedGa();
   setActiveView("view-form");
@@ -368,4 +369,12 @@ function generateFamilyId() {
     out += alphabet[Math.floor(Math.random() * alphabet.length)];
   }
   return out;
+}
+
+function todayDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
