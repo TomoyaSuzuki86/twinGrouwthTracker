@@ -182,6 +182,10 @@ h2 {
   min-height: 40px;
   cursor: pointer;
   box-shadow: 0 10px 22px rgba(29, 27, 22, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .btn.ghost {
@@ -189,6 +193,12 @@ h2 {
   color: var(--ink);
   border: none;
   box-shadow: none;
+}
+
+.btn.icon {
+  width: 40px;
+  padding: 0;
+  border-radius: 999px;
 }
 
 .btn.danger {
@@ -211,6 +221,15 @@ h2 {
   text-align: left;
   padding: 10px 8px;
   border-bottom: 1px solid var(--line);
+}
+
+.table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+  background-color: #f5f7f9;
 }
 
 .muted {
@@ -250,7 +269,57 @@ h2 {
 .summary {
   margin-bottom: 16px;
   display: grid;
-  gap: 8px;
+  gap: 16px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.summary-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.summary-card-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.summary-card-title.fetus-a { color: var(--left); }
+.summary-card-title.fetus-b { color: var(--right); }
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+}
+.summary-item-label { color: var(--muted); }
+.summary-item-value { font-weight: 600; }
+
+.fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+.fab:hover {
+  transform: scale(1.05);
 }
 
 @keyframes fadeUp {
@@ -266,12 +335,12 @@ h2 {
 
 @media (max-width: 720px) {
   .topbar {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
   }
 
   .top-actions {
-    width: 100%;
+    width: auto;
     display: flex;
     justify-content: flex-end;
     gap: 8px;
@@ -282,5 +351,9 @@ h2 {
   .table td:nth-child(3),
   .table td:nth-child(4) {
     display: none;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
   }
 }

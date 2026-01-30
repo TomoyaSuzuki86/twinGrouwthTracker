@@ -30,7 +30,7 @@ const state = {
 };
 
 const el = {
-  btnAdd: document.getElementById("btn-add"),
+  btnAddFab: document.getElementById("btn-add-fab"),
   btnSettings: document.getElementById("btn-settings"),
   btnCreateFamily: document.getElementById("btn-create-family"),
   btnJoinFamily: document.getElementById("btn-join-family"),
@@ -74,7 +74,7 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./service-worker.js").catch(() => {});
 }
 
-el.btnAdd.addEventListener("click", () => openForm());
+el.btnAddFab.addEventListener("click", () => openForm());
 el.btnSettings.addEventListener("click", () => showSettings());
 el.btnCreateFamily.addEventListener("click", () => createAndJoin());
 el.btnJoinFamily.addEventListener("click", () => joinByInput());
@@ -185,6 +185,7 @@ function updateList() {
 
 function showSetup() {
   setActiveView("view-setup");
+  el.btnAddFab.style.display = "none";
 }
 
 function showList() {
@@ -193,6 +194,7 @@ function showList() {
     return;
   }
   setActiveView("view-list");
+  el.btnAddFab.style.display = "flex";
   state.selectedId = null;
 }
 
@@ -210,6 +212,7 @@ function openForm() {
   el.btnDelete.style.display = "none";
   updateDerivedGa();
   setActiveView("view-form");
+  el.btnAddFab.style.display = "none";
 }
 
 function editSelected() {
@@ -223,6 +226,7 @@ function editSelected() {
   el.btnDelete.style.display = "inline-flex";
   updateDerivedGa();
   setActiveView("view-form");
+  el.btnAddFab.style.display = "none";
 }
 
 function showDetail() {
@@ -231,10 +235,12 @@ function showDetail() {
   renderDetail(el.detailSummary, visit, stats, state.dueDate);
   renderGrowthChart(el.chart, state.visits, state.stats);
   setActiveView("view-detail");
+  el.btnAddFab.style.display = "flex";
 }
 
 function showSettings() {
   setActiveView("view-settings");
+  el.btnAddFab.style.display = "none";
 }
 
 async function handleExport() {

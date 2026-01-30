@@ -40,14 +40,73 @@ export function renderDetail(summaryEl, visit, stats, dueDate) {
   const aDelta = stats?.aDeltaFromIdeal;
   const bDelta = stats?.bDeltaFromIdeal;
 
+  const fetusCard = (fetus, key) => {
+    const title = key === "A" ? "Fetus A" : "Fetus B";
+    const perDay = key === "A" ? aPerDay : bPerDay;
+    const delta = key === "A" ? aDelta : bDelta;
+    return `
+      <div class="summary-card">
+        <div class="summary-card-title fetus-${key.toLowerCase()}">${title}</div>
+        <div class="summary-item">
+          <span class="summary-item-label">推定体重(EFW)</span>
+          <span class="summary-item-value">${formatNumber(fetus?.efwG)} g</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-item-label">理想との差</span>
+          <span class="summary-item-value">${formatSigned(delta)} g</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-item-label">前回比/日</span>
+          <span class="summary-item-value">${formatNumber(perDay, 1)} g/day</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-item-label">頭の横幅(BPD)</span>
+          <span class="summary-item-value">${formatNumber(fetus?.bpdMm, 1)} mm</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-item-label">頭の前後(OFD)</span>
+          <span class="summary-item-value">${formatNumber(fetus?.ofdMm, 1)} mm</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-item-label">頭囲(HC)</span>
+          <span class="summary-item-value">${formatNumber(fetus?.hcMm, 1)} mm</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-item-label">腹囲(AC)</span>
+          <span class="summary-item-value">${formatNumber(fetus?.acMm, 1)} mm</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-item-label">大腿骨長(FL)</span>
+          <span class="summary-item-value">${formatNumber(fetus?.flMm, 1)} mm</span>
+        </div>
+      </div>
+    `;
+  };
+
   summaryEl.innerHTML = `
     <div><strong>${escapeHtml(visit.date || "")}</strong> ${escapeHtml(gaText)}</div>
-    <div>A 推定体重(EFW)[g]: ${formatNumber(visit?.fetuses?.A?.efwG)} / B 推定体重(EFW)[g]: ${formatNumber(visit?.fetuses?.B?.efwG)}</div>
-    <div>頭部: A 横幅(BPD)[mm] ${formatNumber(visit?.fetuses?.A?.bpdMm, 1)} / 前後長(OFD)[mm] ${formatNumber(visit?.fetuses?.A?.ofdMm, 1)} / 頭囲(HC)[mm] ${formatNumber(visit?.fetuses?.A?.hcMm, 1)} ・ B 横幅(BPD)[mm] ${formatNumber(visit?.fetuses?.B?.bpdMm, 1)} / 前後長(OFD)[mm] ${formatNumber(visit?.fetuses?.B?.ofdMm, 1)} / 頭囲(HC)[mm] ${formatNumber(visit?.fetuses?.B?.hcMm, 1)}</div>
-    <div>体重差(%): ${formatNumber(discord, 1)}%</div>
-    <div>理想体重（平均）[g]: ${formatNumber(ideal)} (A ${formatSigned(aDelta)} g, B ${formatSigned(bDelta)} g)</div>
-    <div>前回比/日[g]: A ${formatNumber(aPerDay, 1)} g/day, B ${formatNumber(bPerDay, 1)} g/day</div>
-    <div>メモ: ${escapeHtml(visit.memo || "")}</div>
+    <div class="summary-grid">
+      ${fetusCard(visit?.fetuses?.A, "A")}
+      ${fetusCard(visit?.fetuses?.B, "B")}
+    </div>
+    <div>
+      <div class="summary-item">
+        <span class="summary-item-label">体重差</span>
+        <span class="summary-item-value">${formatNumber(discord, 1)}%</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-item-label">理想体重（平均）</span>
+        <span class="summary-item-value">${formatNumber(ideal)} g</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-item-label">子宮頸管</span>
+        <span class="summary-item-value">${formatNumber(visit.cervixMm, 1)} mm</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-item-label">メモ</span>
+        <span class="summary-item-value">${escapeHtml(visit.memo || "")}</span>
+      </div>
+    </div>
   `;
 }
 
