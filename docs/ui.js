@@ -41,6 +41,7 @@ export function renderDetail(summaryEl, visit, stats) {
   summaryEl.innerHTML = `
     <div><strong>${escapeHtml(visit.date || "")}</strong> ${escapeHtml(visit.gaText || "")}</div>
     <div>A 推定体重: ${formatNumber(visit?.fetuses?.A?.efwG)} g / B 推定体重: ${formatNumber(visit?.fetuses?.B?.efwG)} g</div>
+    <div>頭部: A BPD ${formatNumber(visit?.fetuses?.A?.bpdMm, 1)} / OFD ${formatNumber(visit?.fetuses?.A?.ofdMm, 1)} / HC ${formatNumber(visit?.fetuses?.A?.hcMm, 1)} mm ・ B BPD ${formatNumber(visit?.fetuses?.B?.bpdMm, 1)} / OFD ${formatNumber(visit?.fetuses?.B?.ofdMm, 1)} / HC ${formatNumber(visit?.fetuses?.B?.hcMm, 1)} mm</div>
     <div>体重差: ${formatNumber(discord, 1)}%</div>
     <div>理想体重（平均）: ${formatNumber(ideal)} g (A ${formatSigned(aDelta)} g, B ${formatSigned(bDelta)} g)</div>
     <div>前回比/日: A ${formatNumber(aPerDay, 1)} g/day, B ${formatNumber(bPerDay, 1)} g/day</div>
@@ -59,11 +60,15 @@ export function fillForm(formEl, visit) {
   formEl.memo.value = visit.memo || "";
 
   formEl.A_bpdMm.value = visit?.fetuses?.A?.bpdMm ?? "";
+  formEl.A_ofdMm.value = visit?.fetuses?.A?.ofdMm ?? "";
+  formEl.A_hcMm.value = visit?.fetuses?.A?.hcMm ?? "";
   formEl.A_acMm.value = visit?.fetuses?.A?.acMm ?? "";
   formEl.A_flMm.value = visit?.fetuses?.A?.flMm ?? "";
   formEl.A_efwG.value = visit?.fetuses?.A?.efwG ?? "";
 
   formEl.B_bpdMm.value = visit?.fetuses?.B?.bpdMm ?? "";
+  formEl.B_ofdMm.value = visit?.fetuses?.B?.ofdMm ?? "";
+  formEl.B_hcMm.value = visit?.fetuses?.B?.hcMm ?? "";
   formEl.B_acMm.value = visit?.fetuses?.B?.acMm ?? "";
   formEl.B_flMm.value = visit?.fetuses?.B?.flMm ?? "";
   formEl.B_efwG.value = visit?.fetuses?.B?.efwG ?? "";
@@ -78,12 +83,16 @@ export function getFormData(formEl) {
     fetuses: {
       A: {
         bpdMm: toNumber(formEl.A_bpdMm.value),
+        ofdMm: toNumber(formEl.A_ofdMm.value),
+        hcMm: toNumber(formEl.A_hcMm.value),
         acMm: toNumber(formEl.A_acMm.value),
         flMm: toNumber(formEl.A_flMm.value),
         efwG: toNumber(formEl.A_efwG.value)
       },
       B: {
         bpdMm: toNumber(formEl.B_bpdMm.value),
+        ofdMm: toNumber(formEl.B_ofdMm.value),
+        hcMm: toNumber(formEl.B_hcMm.value),
         acMm: toNumber(formEl.B_acMm.value),
         flMm: toNumber(formEl.B_flMm.value),
         efwG: toNumber(formEl.B_efwG.value)

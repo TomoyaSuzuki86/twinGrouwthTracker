@@ -76,7 +76,7 @@
   - cervixCm: number|null
   - memo: string
   - fetuses:
-    - A: { bpdMm, bpdGaText, bpdSd, acMm, acGaText, acSd, flMm, flGaText, flSd, efwG, efwGaText, efwSd }
+    - A: { bpdMm, ofdMm, hcMm, bpdGaText, bpdSd, acMm, acGaText, acSd, flMm, flGaText, flSd, efwG, efwGaText, efwSd }
     - B: { 同上 }
   - createdAt, updatedAt
   - createdByUid, updatedByUid
