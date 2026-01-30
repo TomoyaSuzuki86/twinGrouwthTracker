@@ -10,8 +10,8 @@ export function renderGrowthChart(canvas, visits, statsMap) {
 
   const ordered = [...visits].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
   const labels = ordered.map((visit) => visit.date || "");
-  const aData = ordered.map((visit) => Number(visit?.fetuses?.A?.efwG) || null);
-  const bData = ordered.map((visit) => Number(visit?.fetuses?.B?.efwG) || null);
+  const aData = ordered.map((visit) => (visit?.fetuses?.A?.efwG ? Number(visit.fetuses.A.efwG) : null));
+  const bData = ordered.map((visit) => (visit?.fetuses?.B?.efwG ? Number(visit.fetuses.B.efwG) : null));
   const dData = ordered.map((visit) => {
     const stats = statsMap.get(visit.id);
     return stats ? Number(stats.discordance.toFixed(1)) : null;
@@ -31,14 +31,16 @@ export function renderGrowthChart(canvas, visits, statsMap) {
           data: aData,
           borderColor: "#c6492f",
           backgroundColor: "rgba(198, 73, 47, 0.2)",
-          tension: 0.2
+          tension: 0.2,
+          spanGaps: true
         },
         {
           label: "B 推定体重 (g)",
           data: bData,
           borderColor: "#1b4d6b",
           backgroundColor: "rgba(27, 77, 107, 0.2)",
-          tension: 0.2
+          tension: 0.2,
+          spanGaps: true
         },
         {
           label: "体重差 (%)",

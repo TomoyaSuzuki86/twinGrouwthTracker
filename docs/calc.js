@@ -4,13 +4,13 @@
 }
 
 export function calcDiscordance(aEfw, bEfw) {
-  const a = toNumber(aEfw) || 0;
-  const b = toNumber(bEfw) || 0;
+  const a = toNumber(aEfw);
+  const b = toNumber(bEfw);
+  if (a === null || b === null || a <= 0 || b <= 0) {
+    return null;
+  }
   const bigger = Math.max(a, b);
   const smaller = Math.min(a, b);
-  if (bigger <= 0) {
-    return 0;
-  }
   return ((bigger - smaller) / bigger) * 100;
 }
 
@@ -20,7 +20,7 @@ export function calcPerDay(current, previous, days) {
   }
   const curr = toNumber(current);
   const prev = toNumber(previous);
-  if (curr === null || prev === null) {
+  if (!curr || curr <= 0 || !prev || prev <= 0) {
     return null;
   }
   return (curr - prev) / days;
@@ -47,8 +47,8 @@ export function buildVisitStats(visits, dueDate) {
       bPerDay,
       daysDiff: days,
       idealEfw,
-      aDeltaFromIdeal: idealEfw !== null && aEfw !== null ? aEfw - idealEfw : null,
-      bDeltaFromIdeal: idealEfw !== null && bEfw !== null ? bEfw - idealEfw : null
+      aDeltaFromIdeal: idealEfw !== null && aEfw && aEfw > 0 ? aEfw - idealEfw : null,
+      bDeltaFromIdeal: idealEfw !== null && bEfw && bEfw > 0 ? bEfw - idealEfw : null
     });
   }
 
