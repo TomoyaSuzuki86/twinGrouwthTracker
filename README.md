@@ -1,4 +1,4 @@
-﻿# ETwin Growth Tracker
+﻿# TwinRecho
 
 双胎妊娠の健診データをスマホで入力し、夫婦の端末でリアルタイム同期するWebアプリです。GitHub Pages の `docs/` で動作し、Firebase Authentication（匿名ログイン）+ Firestore を使用します。
 
