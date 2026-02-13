@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = "twin-growth-static-v1";
+﻿const CACHE_NAME = "twin-growth-static-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -33,3 +33,6 @@ self.addEventListener("fetch", (event) => {
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
 });
+
+
+
