@@ -49,6 +49,14 @@ bash scripts/deploy_firestore.sh
 
 - GitHub Pages の公開対象を `docs/` に設定
 
+## Firebase Hosting へデプロイ
+
+`live` ターゲット（`twinrecho`）へデプロイする場合は、以下を実行します。
+
+```bash
+firebase deploy --only hosting:live
+```
+
 ## 使い方
 
 - 初回は「家族を作る」を押して家族IDを生成
