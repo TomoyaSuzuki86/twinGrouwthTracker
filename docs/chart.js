@@ -65,14 +65,28 @@ export function renderGrowthChart(canvas, visits, statsMap) {
     },
     options: {
       responsive: true,
+      plugins: {
+        legend: {
+          labels: {
+            color: "#1b3158"
+          }
+        }
+      },
       scales: {
         y: {
-          title: { display: true, text: "EFW (g)" }
+          ticks: { color: "#1b3158" },
+          grid: { color: "rgba(27, 49, 88, 0.18)" },
+          title: { display: true, text: "EFW (g)", color: "#1b3158" }
         },
         y2: {
           position: "right",
-          title: { display: true, text: "Discordance (%)" },
-          grid: { drawOnChartArea: false }
+          ticks: { color: "#1b3158" },
+          title: { display: true, text: "Discordance (%)", color: "#1b3158" },
+          grid: { drawOnChartArea: false, color: "rgba(27, 49, 88, 0.18)" }
+        },
+        x: {
+          ticks: { color: "#1b3158" },
+          grid: { color: "rgba(27, 49, 88, 0.1)" }
         }
       }
     }
@@ -115,9 +129,22 @@ export function renderCervixChart(canvas, records) {
     },
     options: {
       responsive: true,
+      plugins: {
+        legend: {
+          labels: {
+            color: "#1b3158"
+          }
+        }
+      },
       scales: {
         y: {
-          title: { display: true, text: "mm" }
+          ticks: { color: "#1b3158" },
+          grid: { color: "rgba(27, 49, 88, 0.18)" },
+          title: { display: true, text: "mm", color: "#1b3158" }
+        },
+        x: {
+          ticks: { color: "#1b3158" },
+          grid: { color: "rgba(27, 49, 88, 0.1)" }
         }
       }
     }

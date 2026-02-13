@@ -1,14 +1,14 @@
 :root {
-  --bg: #f3f6f9;
-  --panel: #ffffff;
-  --ink: #1c2426;
-  --muted: #6b7b82;
-  --left: #5c7c96;
-  --right: #e08f62;
-  --unknown: #a6b0b6;
-  --accent: #2f6b6f;
-  --line: #dde6ea;
-  --shadow: 0 18px 36px rgba(28, 36, 38, 0.12);
+  --bg: #1b3158;
+  --panel: #243d69;
+  --ink: #e6debb;
+  --muted: #c7bd94;
+  --left: #8fb4ff;
+  --right: #ffd07d;
+  --unknown: #9da9c0;
+  --accent: #1b3158;
+  --line: #3f5786;
+  --shadow: 0 18px 36px rgba(5, 11, 24, 0.45);
 }
 
 * {
@@ -20,7 +20,7 @@ body {
   font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
   font-size: 15px;
   color: var(--ink);
-  background: radial-gradient(circle at top, #e8f1f3 0%, #f3f6f9 45%, #eef2f5 100%);
+  background: radial-gradient(circle at top, #2a4679 0%, #1f3862 45%, #1b3158 100%);
   min-height: 100vh;
 }
 
@@ -43,8 +43,8 @@ h2 {
 .bg {
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at 14% 18%, rgba(92, 124, 150, 0.16), transparent 42%),
-    radial-gradient(circle at 84% 12%, rgba(224, 143, 98, 0.18), transparent 46%);
+  background: radial-gradient(circle at 14% 18%, rgba(230, 222, 187, 0.12), transparent 42%),
+    radial-gradient(circle at 84% 12%, rgba(230, 222, 187, 0.1), transparent 46%);
   z-index: -1;
 }
 
@@ -98,6 +98,7 @@ h2 {
 
 .card {
   background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 18px;
   padding: 22px;
   box-shadow: var(--shadow);
@@ -151,7 +152,8 @@ h2 {
   padding: 10px 12px;
   font-size: 15px;
   min-height: 40px;
-  background: white;
+  background: #f3efd8;
+  color: #1b3158;
 }
 
 .field select {
@@ -160,7 +162,8 @@ h2 {
   padding: 10px 12px;
   font-size: 15px;
   min-height: 40px;
-  background: white;
+  background: #f3efd8;
+  color: #1b3158;
 }
 
 .readonly-value {
@@ -170,7 +173,7 @@ h2 {
   padding: 0 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #f5f7f9;
+  background: rgba(230, 222, 187, 0.12);
   color: var(--ink);
   font-size: 15px;
 }
@@ -178,7 +181,7 @@ h2 {
 .btn {
   border: none;
   background: var(--accent);
-  color: white;
+  color: var(--ink);
   padding: 10px 14px;
   border-radius: 14px;
   font-weight: 700;
@@ -193,7 +196,7 @@ h2 {
 }
 
 .btn.ghost {
-  background: #eef2f5;
+  background: rgba(230, 222, 187, 0.14);
   color: var(--ink);
   border: none;
   box-shadow: none;
@@ -206,7 +209,8 @@ h2 {
 }
 
 .btn.danger {
-  background: #3c1f22;
+  background: #7b2e3d;
+  color: #fbeef0;
 }
 
 .btn:disabled {
@@ -218,6 +222,10 @@ h2 {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  background: #f8f4de;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #d8cca1;
 }
 
 .table th,
@@ -225,6 +233,21 @@ h2 {
   text-align: left;
   padding: 10px 8px;
   border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.table th {
+  background: #1b3158;
+  color: #f6f0cf;
+  font-weight: 700;
+}
+
+.table tbody tr:nth-child(odd) {
+  background: #f8f4de;
+}
+
+.table tbody tr:nth-child(even) {
+  background: #f1e8c8;
 }
 
 .table tbody tr {
@@ -233,7 +256,11 @@ h2 {
 }
 
 .table tbody tr:hover {
-  background-color: #f5f7f9;
+  background-color: #e6dbb3;
+}
+
+.table td {
+  color: #1b3158;
 }
 
 .muted {
@@ -264,17 +291,13 @@ h2 {
   display: flex;
   gap: 12px;
   align-items: center;
-  background: rgba(255, 255, 255, 0.7);
+  justify-content: space-between;
+  background: rgba(230, 222, 187, 0.14);
   border: 1px solid var(--line);
   padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid var(--line);
   color: var(--ink);
-  cursor: pointer;
-}
-
-button.family-chip {
-  font: inherit;
 }
 
 .summary {
@@ -293,6 +316,7 @@ button.family-chip {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 12px;
+  background: rgba(10, 19, 38, 0.3);
 }
 
 .summary-card-title {
@@ -319,7 +343,7 @@ button.family-chip {
 
 .inline-icon-btn {
   border: 1px solid var(--line);
-  background: #f5f7f9;
+  background: rgba(230, 222, 187, 0.14);
   color: var(--ink);
   border-radius: 999px;
   width: 24px;
@@ -355,6 +379,7 @@ button.family-chip {
   max-height: 90vh;
   overflow: auto;
   background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 16px;
   padding: 16px;
   box-shadow: var(--shadow);
@@ -371,6 +396,23 @@ button.family-chip {
   overflow-x: auto;
 }
 
+.list-table-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+#view-list .table {
+  margin: 0 auto;
+}
+
+canvas#growth-chart,
+canvas#cervix-chart {
+  background: #f8f4de;
+  border: 1px solid #d8cca1;
+  border-radius: 12px;
+  padding: 8px;
+}
+
 .fab {
   position: fixed;
   right: 24px;
@@ -379,7 +421,7 @@ button.family-chip {
   height: 56px;
   border-radius: 999px;
   background: var(--accent);
-  color: white;
+  color: var(--ink);
   border: none;
   box-shadow: var(--shadow);
   cursor: pointer;
@@ -416,10 +458,19 @@ button.family-chip {
     gap: 8px;
   }
 
+  #view-list .card {
+    padding: 14px;
+  }
+
+  #view-list .table {
+    width: 100%;
+  }
+
   .table th,
   .table td {
     white-space: nowrap;
     font-size: 13px;
+    padding: 9px 6px;
   }
 
   .summary-grid {

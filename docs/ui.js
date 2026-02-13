@@ -166,7 +166,7 @@ export function getFormData(formEl) {
 }
 
 export function setFamilyLabel(el, familyId) {
-  el.textContent = familyId ? `family ${familyId}` : "";
+  el.textContent = familyId ? `家族コード ${familyId}` : "";
 }
 
 function toNumber(value) {

@@ -2,6 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+    match /familyCodes/{familyCode} {
+      allow read, write: if signedIn();
+    }
     match /families/{familyId} {
       allow read, create, update: if signedIn();
       allow delete: if false;

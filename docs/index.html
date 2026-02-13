@@ -37,33 +37,25 @@
         <div class="two-col">
           <div>
             <h2>家族を作る</h2>
-            <p class="muted">英数字の家族名を作成します。あとで招待リンクを共有できます。</p>
+            <p class="muted">英数字の家族コードを作成します。あとで招待リンクを共有できます。</p>
             <label class="field">
-              <span>家族名（英数字）</span>
+              <span>家族コード（英数字）</span>
               <input id="input-create-family-id" type="text" placeholder="例: suzuki2026" />
-            </label>
-            <label class="field">
-              <span>家族パスワード</span>
-              <input id="input-create-family-pass" type="password" placeholder="例: 0817" />
             </label>
             <button id="btn-create-family" class="btn">家族を作る</button>
           </div>
           <div>
             <h2>家族に参加</h2>
-            <p class="muted">招待リンクからの参加はパスワード不要です。手入力参加はパスワードが必要です。</p>
+            <p class="muted">プルダウンまたは家族コード入力で参加します。</p>
             <label class="field">
-              <span>参加済み家族（この端末）</span>
+              <span>家族コード一覧</span>
               <select id="select-family-id">
                 <option value="">選択してください</option>
               </select>
             </label>
             <label class="field">
-              <span>家族名（英数字）</span>
+              <span>家族コード（英数字）</span>
               <input id="input-family-id" type="text" placeholder="例: suzuki2026" />
-            </label>
-            <label class="field">
-              <span>家族パスワード</span>
-              <input id="input-family-pass" type="password" placeholder="参加時のみ必要" />
             </label>
             <button id="btn-join-family" class="btn">参加する</button>
           </div>
@@ -74,22 +66,27 @@
     <section id="view-list" class="view">
       <div class="headline">
         <h1>健診一覧</h1>
-        <button id="btn-family-chip" class="family-chip" type="button" title="招待リンクをコピー">
+        <div class="family-chip">
           <span id="label-family-id">family</span>
-        </button>
+          <button id="btn-copy-family-link" class="inline-icon-btn" type="button" title="招待リンクをコピー" aria-label="招待リンクをコピー">
+            <span class="material-icons">content_copy</span>
+          </button>
+        </div>
       </div>
       <div class="card">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>日付</th>
-              <th>週数</th>
-              <th>A/B 推定体重(g)</th>
-              <th>体重差(%)</th>
-            </tr>
-          </thead>
-          <tbody id="visits-table"></tbody>
-        </table>
+        <div class="table-wrap list-table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>日付</th>
+                <th>週数</th>
+                <th>A/B 推定体重(g)</th>
+                <th>体重差(%)</th>
+              </tr>
+            </thead>
+            <tbody id="visits-table"></tbody>
+          </table>
+        </div>
         <div id="empty-state" class="empty">まだデータがありません。右下の追加ボタンから入力してください。</div>
       </div>
     </section>
@@ -253,13 +250,20 @@
         </label>
         <p class="muted">日付を入力すると、健診日の週数が自動計算されます。</p>
 
+        <div class="divider">家族コード</div>
+        <label class="field">
+          <span>家族コード（変更可能）</span>
+          <input id="input-family-code-edit" type="text" placeholder="新しい家族コード" />
+        </label>
+        <button id="btn-save-family-code" class="btn">家族コードを更新</button>
+
         <div class="divider">安全ロック</div>
         <label class="field inline">
           <input id="toggle-lock" type="checkbox" />
-          <span>削除などの操作にロックコードを要求</span>
+          <span>削除などの操作にパスワードを要求</span>
         </label>
         <label class="field">
-          <span>ロックコード</span>
+          <span>パスワード</span>
           <input id="input-lock-code" type="text" placeholder="0817" />
         </label>
         <button id="btn-leave-family" class="btn ghost">家族を切り替える</button>

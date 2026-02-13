@@ -1,8 +1,10 @@
-﻿import { initFirebase, getDb } from "./firebase.js";
+import { initFirebase, getDb } from "./firebase.js";
 import {
   createFamily,
+  listFamilyCodes,
   joinFamilyByInvite,
-  joinFamilyWithPassword,
+  joinFamilyByCode,
+  updateFamilyCode,
   subscribeFamily,
   subscribeVisits,
   updateFamilySettings,
@@ -17,7 +19,6 @@ import { buildVisitStats, gaTextFromDates } from "./calc.js";
 import { renderGrowthChart, renderCervixChart } from "./chart.js";
 
 const LS_FAMILY = "ttt_family_id";
-const LS_RECENT_FAMILIES = "ttt_recent_families";
 const LS_LOCK_ENABLED = "ttt_lock_enabled";
 const LS_LOCK_CODE = "ttt_lock_code";
 const LS_DUE_DATE = "ttt_due_date";
@@ -25,12 +26,14 @@ const LS_DUE_DATE = "ttt_due_date";
 const state = {
   user: null,
   familyId: null,
+  familyCode: null,
   family: null,
   visits: [],
   stats: new Map(),
   selectedId: null,
   unsubscribeVisits: null,
   unsubscribeFamily: null,
+  allFamilyCodes: [],
   dueDate: null,
   editingVisit: null
 };
@@ -40,12 +43,10 @@ const el = {
   btnSettings: document.getElementById("btn-settings"),
   btnCreateFamily: document.getElementById("btn-create-family"),
   btnJoinFamily: document.getElementById("btn-join-family"),
-  inputCreateFamilyId: document.getElementById("input-create-family-id"),
-  inputCreateFamilyPass: document.getElementById("input-create-family-pass"),
-  selectFamilyId: document.getElementById("select-family-id"),
-  inputFamilyId: document.getElementById("input-family-id"),
-  inputFamilyPass: document.getElementById("input-family-pass"),
-  btnFamilyChip: document.getElementById("btn-family-chip"),
+  inputCreateFamilyCode: document.getElementById("input-create-family-id"),
+  selectFamilyCode: document.getElementById("select-family-id"),
+  inputFamilyCode: document.getElementById("input-family-id"),
+  btnCopyFamilyLink: document.getElementById("btn-copy-family-link"),
   cervixModal: document.getElementById("cervix-modal"),
   btnCloseCervixModal: document.getElementById("btn-close-cervix-modal"),
   cervixChart: document.getElementById("cervix-chart"),
@@ -71,20 +72,22 @@ const el = {
   inputLockCode: document.getElementById("input-lock-code"),
   btnLeaveFamily: document.getElementById("btn-leave-family"),
   inputDueDate: document.getElementById("input-due-date"),
+  inputFamilyCodeEdit: document.getElementById("input-family-code-edit"),
+  btnSaveFamilyCode: document.getElementById("btn-save-family-code"),
   derivedGa: document.getElementById("derived-ga")
 };
 
 initFirebase(async (user) => {
   state.user = user;
   setupSettings();
-  renderRecentFamilies();
+  await loadFamilyCodes();
 
   const url = new URL(window.location.href);
   const familyFromUrl = normalizeFamilyId(url.searchParams.get("family"));
-  const stored = normalizeFamilyId(localStorage.getItem(LS_FAMILY));
+  const storedFamilyId = normalizeFamilyId(localStorage.getItem(LS_FAMILY));
 
   if (familyFromUrl) {
-    const joined = await trySetFamily(familyFromUrl, { mode: "invite" });
+    const joined = await trySetFamilyById(familyFromUrl, { mode: "invite" });
     if (joined) {
       url.searchParams.delete("family");
       history.replaceState({}, "", url);
@@ -92,8 +95,8 @@ initFirebase(async (user) => {
     }
   }
 
-  if (stored) {
-    const resumed = await trySetFamily(stored, { mode: "stored" });
+  if (storedFamilyId) {
+    const resumed = await trySetFamilyById(storedFamilyId, { mode: "stored" });
     if (resumed) {
       return;
     }
@@ -109,9 +112,10 @@ if ("serviceWorker" in navigator) {
 el.btnAddFab.addEventListener("click", () => openForm());
 el.btnSettings.addEventListener("click", () => showSettings());
 el.btnCreateFamily.addEventListener("click", () => createAndJoin());
-el.btnJoinFamily.addEventListener("click", () => joinByInput());
+el.btnJoinFamily.addEventListener("click", () => joinByCode());
 el.btnCopyLink.addEventListener("click", () => copyInviteLink());
-el.btnFamilyChip.addEventListener("click", () => copyInviteLink());
+el.btnCopyFamilyLink.addEventListener("click", () => copyInviteLink());
+el.btnSaveFamilyCode.addEventListener("click", () => saveFamilyCode());
 el.btnCloseCervixModal.addEventListener("click", () => closeCervixModal());
 el.cervixModal.addEventListener("click", (event) => {
   if (event.target === el.cervixModal) {
@@ -129,10 +133,10 @@ el.toggleLock.addEventListener("change", () => saveLockSettings());
 el.inputLockCode.addEventListener("change", () => saveLockSettings());
 el.inputDueDate.addEventListener("change", () => saveDueDate());
 el.form.date.addEventListener("change", () => updateDerivedGa());
-el.selectFamilyId.addEventListener("change", () => {
-  const value = normalizeFamilyId(el.selectFamilyId.value);
+el.selectFamilyCode.addEventListener("change", () => {
+  const value = normalizeFamilyCode(el.selectFamilyCode.value);
   if (value) {
-    el.inputFamilyId.value = value;
+    el.inputFamilyCode.value = value;
   }
 });
 
@@ -211,62 +215,51 @@ document.addEventListener("keydown", (event) => {
 });
 
 async function createAndJoin() {
-  const familyId = normalizeFamilyId(el.inputCreateFamilyId.value);
-  const password = String(el.inputCreateFamilyPass.value || "").trim();
+  const familyCode = normalizeFamilyCode(el.inputCreateFamilyCode.value);
 
-  if (!familyId || !isValidFamilyId(familyId)) {
-    alert("家族名は英数字3〜32文字で入力してください");
-    return;
-  }
-  if (!password) {
-    alert("家族パスワードを入力してください");
+  if (!isValidFamilyCode(familyCode)) {
+    alert("家族コードは英数字3〜32文字で入力してください");
     return;
   }
 
   try {
     const db = getDb();
-    await createFamily(db, state.user, familyId, password);
-    await setFamily(familyId);
-    el.inputCreateFamilyPass.value = "";
+    const created = await createFamily(db, state.user, familyCode);
+    await loadFamilyCodes();
+    await setFamily(created.familyId, created.familyCode);
   } catch (err) {
     console.error(err);
-    if (err?.message === "family-already-exists") {
-      alert("その家族名は既に使われています。別の名前を入力してください。");
+    if (err?.message === "family-code-already-exists") {
+      alert("その家族コードは既に使われています。別のコードを入力してください。");
       return;
     }
     alert("家族作成に失敗しました");
   }
 }
 
-async function joinByInput() {
-  const selectedFamily = normalizeFamilyId(el.selectFamilyId.value);
-  const inputFamily = normalizeFamilyId(el.inputFamilyId.value);
-  const familyId = inputFamily || selectedFamily;
-  const password = String(el.inputFamilyPass.value || "").trim();
+async function joinByCode() {
+  const selectedCode = normalizeFamilyCode(el.selectFamilyCode.value);
+  const inputCode = normalizeFamilyCode(el.inputFamilyCode.value);
+  const familyCode = inputCode || selectedCode;
 
-  if (!familyId || !isValidFamilyId(familyId)) {
-    alert("家族名は英数字3〜32文字で入力してください");
-    return;
-  }
-  if (!password) {
-    alert("家族パスワードを入力してください");
+  if (!isValidFamilyCode(familyCode)) {
+    alert("家族コードは英数字3〜32文字で入力してください");
     return;
   }
 
-  const joined = await trySetFamily(familyId, { mode: "manual", password });
-  if (joined) {
-    el.inputFamilyPass.value = "";
+  try {
+    const joined = await joinFamilyByCode(getDb(), state.user, familyCode);
+    await setFamily(joined.familyId, joined.family?.familyCode || familyCode);
+  } catch (err) {
+    console.error(err);
+    handleJoinError(err, "manual");
   }
 }
 
-async function trySetFamily(familyId, options) {
+async function trySetFamilyById(familyId, options) {
   try {
-    if (options?.mode === "invite") {
-      await joinFamilyByInvite(getDb(), state.user, familyId);
-    } else if (options?.mode === "manual") {
-      await joinFamilyWithPassword(getDb(), state.user, familyId, options.password);
-    }
-    await setFamily(familyId);
+    await joinFamilyByInvite(getDb(), state.user, familyId);
+    await setFamily(familyId, null);
     return true;
   } catch (err) {
     console.error(err);
@@ -278,11 +271,7 @@ async function trySetFamily(familyId, options) {
 function handleJoinError(err, mode) {
   const code = err?.message || "";
   if (code === "family-not-found") {
-    alert("家族名が見つかりません。招待リンクから参加するか、家族名を確認してください。");
-    return;
-  }
-  if (code === "invalid-password") {
-    alert("家族パスワードが正しくありません。");
+    alert("家族が見つかりません。招待リンクまたは家族コードを確認してください。");
     return;
   }
   if (mode === "stored") {
@@ -292,12 +281,11 @@ function handleJoinError(err, mode) {
   alert("家族への参加に失敗しました");
 }
 
-async function setFamily(familyId) {
-  state.familyId = familyId;
-  localStorage.setItem(LS_FAMILY, familyId);
-  setFamilyLabel(el.labelFamily, familyId);
-  addRecentFamily(familyId);
-  renderRecentFamilies();
+async function setFamily(familyId, familyCode) {
+  state.familyId = normalizeFamilyId(familyId);
+  state.familyCode = normalizeFamilyCode(familyCode) || null;
+  localStorage.setItem(LS_FAMILY, state.familyId);
+  setFamilyLabel(el.labelFamily, state.familyCode || state.familyId);
   subscribe();
   showList();
 }
@@ -315,6 +303,11 @@ function subscribe() {
     state.familyId,
     (family) => {
       state.family = family;
+      const incomingCode = normalizeFamilyCode(family?.familyCode || state.familyId);
+      state.familyCode = incomingCode;
+      setFamilyLabel(el.labelFamily, incomingCode || state.familyId);
+      el.inputFamilyCodeEdit.value = incomingCode || "";
+
       const incomingDueDate = family?.dueDate || null;
       if (state.dueDate !== incomingDueDate) {
         state.dueDate = incomingDueDate;
@@ -410,6 +403,7 @@ async function handleExport() {
     const visits = await exportVisits(getDb(), state.familyId);
     const payload = {
       familyId: state.familyId,
+      familyCode: state.familyCode,
       exportedAt: new Date().toISOString(),
       visits
     };
@@ -417,7 +411,7 @@ async function handleExport() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `twin-visits-${state.familyId}.json`;
+    a.download = `twin-visits-${state.familyCode || state.familyId}.json`;
     a.click();
     URL.revokeObjectURL(url);
   } catch (err) {
@@ -468,6 +462,7 @@ function setupSettings() {
   el.toggleLock.checked = enabled;
   el.inputLockCode.value = code;
   el.inputDueDate.value = dueDate;
+  el.inputFamilyCodeEdit.value = "";
   state.dueDate = dueDate || null;
   refreshStats();
   updateDerivedGa();
@@ -493,6 +488,35 @@ async function saveDueDate() {
   } catch (err) {
     console.error(err);
     alert("出産予定日の保存に失敗しました");
+  }
+}
+
+async function saveFamilyCode() {
+  if (!state.familyId) {
+    return;
+  }
+  const nextCode = normalizeFamilyCode(el.inputFamilyCodeEdit.value);
+  if (!isValidFamilyCode(nextCode)) {
+    alert("家族コードは英数字3〜32文字で入力してください");
+    return;
+  }
+  try {
+    await updateFamilyCode(getDb(), state.familyId, state.user, nextCode);
+    state.familyCode = nextCode;
+    setFamilyLabel(el.labelFamily, nextCode);
+    await loadFamilyCodes();
+    alert("家族コードを更新しました");
+  } catch (err) {
+    console.error(err);
+    if (err?.code === "permission-denied") {
+      alert("権限エラーです。Firestore ルールをデプロイしてください（firebase deploy --only firestore:rules）。");
+      return;
+    }
+    if (err?.message === "family-code-already-exists") {
+      alert("その家族コードは既に使われています");
+      return;
+    }
+    alert("家族コードの更新に失敗しました");
   }
 }
 
@@ -528,17 +552,18 @@ function confirmLock() {
     return true;
   }
   const code = localStorage.getItem(LS_LOCK_CODE) || "0817";
-  const input = prompt("ロックコードを入力してください");
+  const input = prompt("パスワードを入力してください");
   return input === code;
 }
 
 function leaveFamily() {
-  const ok = confirm("家族名を削除して最初の画面に戻りますか？");
+  const ok = confirm("家族コードを削除して最初の画面に戻りますか？");
   if (!ok) {
     return;
   }
   localStorage.removeItem(LS_FAMILY);
   state.familyId = null;
+  state.familyCode = null;
   state.family = null;
   state.visits = [];
   state.selectedId = null;
@@ -606,49 +631,34 @@ function renderCervixTable(rows) {
   }
 }
 
-function renderRecentFamilies() {
-  const ids = getRecentFamilies();
-  const current = normalizeFamilyId(el.selectFamilyId.value);
-  el.selectFamilyId.innerHTML = "";
+async function loadFamilyCodes() {
+  try {
+    state.allFamilyCodes = await listFamilyCodes(getDb());
+    renderFamilyCodeOptions();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderFamilyCodeOptions() {
+  const items = state.allFamilyCodes;
+  const current = normalizeFamilyCode(el.selectFamilyCode.value);
+  el.selectFamilyCode.innerHTML = "";
 
   const defaultOption = document.createElement("option");
   defaultOption.value = "";
   defaultOption.textContent = "選択してください";
-  el.selectFamilyId.appendChild(defaultOption);
+  el.selectFamilyCode.appendChild(defaultOption);
 
-  for (const id of ids) {
+  for (const familyCode of items) {
     const option = document.createElement("option");
-    option.value = id;
-    option.textContent = id;
-    el.selectFamilyId.appendChild(option);
+    option.value = familyCode;
+    option.textContent = familyCode;
+    el.selectFamilyCode.appendChild(option);
   }
 
-  if (current && ids.includes(current)) {
-    el.selectFamilyId.value = current;
-  }
-}
-
-function addRecentFamily(familyId) {
-  const id = normalizeFamilyId(familyId);
-  if (!id) {
-    return;
-  }
-  const current = getRecentFamilies();
-  const next = [id, ...current.filter((item) => item !== id)].slice(0, 8);
-  localStorage.setItem(LS_RECENT_FAMILIES, JSON.stringify(next));
-}
-
-function getRecentFamilies() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(LS_RECENT_FAMILIES) || "[]");
-    if (!Array.isArray(raw)) {
-      return [];
-    }
-    return raw
-      .map((item) => normalizeFamilyId(item))
-      .filter((item) => isValidFamilyId(item));
-  } catch {
-    return [];
+  if (current && items.includes(current)) {
+    el.selectFamilyCode.value = current;
   }
 }
 
@@ -659,11 +669,18 @@ function normalizeFamilyId(value) {
   return String(value).trim();
 }
 
-function isValidFamilyId(value) {
+function normalizeFamilyCode(value) {
+  if (!value) {
+    return "";
+  }
+  return String(value).trim().toLowerCase();
+}
+
+function isValidFamilyCode(value) {
   if (!value) {
     return false;
   }
-  return /^[A-Za-z0-9]{3,32}$/.test(value);
+  return /^[a-z0-9]{3,32}$/.test(value);
 }
 
 function todayDateString() {
