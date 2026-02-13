@@ -25,6 +25,14 @@ function Invoke-Firebase([string[]]$Args) {
   return $output
 }
 
+function Try-Invoke-Firebase([string[]]$Args) {
+  $output = & firebase @Args 2>&1
+  return @{
+    Output = $output
+    Code = $LASTEXITCODE
+  }
+}
+
 function Strip-Ansi([string]$text) {
   return ($text -replace "`e\[[0-9;]*m", "")
 }
@@ -77,30 +85,84 @@ $AppName = "twin-growth-tracker"
 function Find-AppId([string]$text, [string]$name) {
   $lines = $text -split "`r?`n"
   foreach ($line in $lines) {
-    if ($line -match [regex]::Escape($name) -and $line -match "(1:\d+:web:[a-z0-9]+)") {
-      return $Matches[1]
+    if ($line -match [regex]::Escape($name)) {
+      if ($line -match "App ID:\s*([0-9]+:[0-9]+:web:[A-Za-z0-9]+)") {
+        return $Matches[1]
+      }
+      if ($line -match "(1:\d+:web:[A-Za-z0-9]+)") {
+        return $Matches[1]
+      }
     }
   }
-  if ($text -match "(1:\d+:web:[a-z0-9]+)") {
+  if ($text -match "App ID:\s*([0-9]+:[0-9]+:web:[A-Za-z0-9]+)") {
+    return $Matches[1]
+  }
+  if ($text -match "(1:\d+:web:[A-Za-z0-9]+)") {
     return $Matches[1]
   }
   return ""
 }
 
-if ([string]::IsNullOrWhiteSpace($AppId)) {
-  $appsList = Invoke-Firebase @("apps:list", "WEB", "--project", $ProjectId)
-  $appsText = Strip-Ansi ($appsList | Out-String)
-  $AppId = Find-AppId $appsText $AppName
+function Find-AppIdFromJson([string]$jsonText, [string]$name) {
+  if ([string]::IsNullOrWhiteSpace($jsonText)) {
+    return ""
+  }
+  try {
+    $obj = $jsonText | ConvertFrom-Json
+  } catch {
+    return ""
+  }
+  $apps = @()
+  if ($obj.apps) { $apps = $obj.apps }
+  elseif ($obj.result) { $apps = $obj.result }
+  elseif ($obj) { $apps = $obj }
+  foreach ($app in $apps) {
+    if ($app.platform -and $app.platform -ne "WEB") { continue }
+    if ($app.displayName -and $app.displayName -ne $name) { continue }
+    if ($app.appId) { return $app.appId }
+    if ($app.appId -eq $null -and $app.app_id) { return $app.app_id }
+  }
+  foreach ($app in $apps) {
+    if ($app.platform -and $app.platform -ne "WEB") { continue }
+    if ($app.appId) { return $app.appId }
+    if ($app.app_id) { return $app.app_id }
+  }
+  return ""
 }
 
 if ([string]::IsNullOrWhiteSpace($AppId)) {
-  $appOutput = Invoke-Firebase @("apps:create", "web", $AppName, "--project", $ProjectId)
-  $appOutputText = Strip-Ansi ($appOutput | Out-String)
+  $appsResult = Try-Invoke-Firebase @("apps:list", "--project", $ProjectId, "--json")
+  $appsText = Strip-Ansi ($appsResult.Output | Out-String)
+  if ($appsResult.Code -eq 0) {
+    $AppId = Find-AppIdFromJson $appsText $AppName
+    if ([string]::IsNullOrWhiteSpace($AppId)) {
+      $AppId = Find-AppId $appsText $AppName
+    }
+  }
+}
+
+if ([string]::IsNullOrWhiteSpace($AppId)) {
+  $createResult = Try-Invoke-Firebase @("apps:create", "web", $AppName, "--project", $ProjectId, "--json")
+  $appOutputText = Strip-Ansi ($createResult.Output | Out-String)
+  if ($createResult.Code -eq 0) {
+    $AppId = Find-AppIdFromJson $appOutputText $AppName
+  }
   $AppId = Find-AppId $appOutputText $AppName
+  if ([string]::IsNullOrWhiteSpace($AppId) -and $createResult.Code -ne 0) {
+    throw ($createResult.Output -join "`n")
+  }
 }
 
 if ([string]::IsNullOrWhiteSpace($AppId)) {
-  throw "Failed to detect App ID from firebase output."
+  $logPath = Join-Path $repoRoot "firebase-app-output.log"
+  @(
+    "== apps:list output =="
+    $appsText
+    ""
+    "== apps:create output =="
+    $appOutputText
+  ) | Set-Content -Path $logPath -Encoding UTF8
+  throw "Failed to detect App ID from firebase output. See firebase-app-output.log or pass -AppId."
 }
 
 New-Item -ItemType Directory -Force -Path docs | Out-Null
