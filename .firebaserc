@@ -1,5 +1,15 @@
 {
   "projects": {
-    "default": "twingrouwthtracker"
-  }
+    "default": "twingrouwthtracker-e8b2f"
+  },
+  "targets": {
+    "twingrouwthtracker-e8b2f": {
+      "hosting": {
+        "live": [
+          "twinrecho"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
