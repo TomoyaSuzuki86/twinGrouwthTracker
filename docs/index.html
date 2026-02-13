@@ -198,6 +198,31 @@
       </div>
     </section>
 
+    <div id="cervix-modal" class="modal" aria-hidden="true">
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="cervix-modal-title">
+        <div class="modal-head">
+          <h2 id="cervix-modal-title">子宮頚管の推移</h2>
+          <button id="btn-close-cervix-modal" class="btn ghost icon" type="button" aria-label="閉じる">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <div id="cervix-empty" class="empty" style="display:none;">表示できる子宮頚管データがありません。</div>
+        <canvas id="cervix-chart" height="160"></canvas>
+        <div id="cervix-table-wrap" class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>日付</th>
+                <th>週数</th>
+                <th>子宮頚管(mm)</th>
+              </tr>
+            </thead>
+            <tbody id="cervix-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <section id="view-settings" class="view">
       <div class="headline">
         <h1>設定</h1>

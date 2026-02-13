@@ -1,4 +1,5 @@
-﻿let chartInstance;
+let chartInstance;
+let cervixChartInstance;
 
 export function renderGrowthChart(canvas, visits, statsMap) {
   if (!canvas || typeof Chart === "undefined") {
@@ -72,6 +73,51 @@ export function renderGrowthChart(canvas, visits, statsMap) {
           position: "right",
           title: { display: true, text: "Discordance (%)" },
           grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  });
+}
+
+export function renderCervixChart(canvas, records) {
+  if (!canvas || typeof Chart === "undefined") {
+    return;
+  }
+  if (cervixChartInstance) {
+    cervixChartInstance.destroy();
+    cervixChartInstance = null;
+  }
+
+  const filtered = Array.isArray(records)
+    ? records.filter((item) => Number.isFinite(item?.cervixMm) && item.cervixMm > 0)
+    : [];
+  if (!filtered.length) {
+    return;
+  }
+
+  const labels = filtered.map((item) => item.date || "");
+  const values = filtered.map((item) => Number(item.cervixMm));
+
+  cervixChartInstance = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "子宮頚管 (mm)",
+          data: values,
+          borderColor: "#2f6b6f",
+          backgroundColor: "rgba(47, 107, 111, 0.2)",
+          tension: 0.2,
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          title: { display: true, text: "mm" }
         }
       }
     }

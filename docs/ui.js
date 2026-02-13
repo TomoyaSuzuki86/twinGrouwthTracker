@@ -98,7 +98,12 @@ export function renderDetail(summaryEl, visit, stats, dueDate) {
         <span class="summary-item-value">${formatNumber(ideal)} g</span>
       </div>
       <div class="summary-item">
-        <span class="summary-item-label">子宮頸管</span>
+        <span class="summary-item-label summary-label-with-icon">
+          子宮頸管
+          <button class="inline-icon-btn" type="button" data-action="open-cervix-chart" title="子宮頚管グラフを表示" aria-label="子宮頚管グラフを表示">
+            <span class="material-icons">show_chart</span>
+          </button>
+        </span>
         <span class="summary-item-value">${formatNumber(visit.cervixMm, 1)} mm</span>
       </div>
       <div class="summary-item">

@@ -14,7 +14,7 @@ import {
 } from "./store.js";
 import { setActiveView, renderVisits, renderDetail, fillForm, getFormData, setFamilyLabel } from "./ui.js";
 import { buildVisitStats, gaTextFromDates } from "./calc.js";
-import { renderGrowthChart } from "./chart.js";
+import { renderGrowthChart, renderCervixChart } from "./chart.js";
 
 const LS_FAMILY = "ttt_family_id";
 const LS_RECENT_FAMILIES = "ttt_recent_families";
@@ -46,6 +46,12 @@ const el = {
   inputFamilyId: document.getElementById("input-family-id"),
   inputFamilyPass: document.getElementById("input-family-pass"),
   btnFamilyChip: document.getElementById("btn-family-chip"),
+  cervixModal: document.getElementById("cervix-modal"),
+  btnCloseCervixModal: document.getElementById("btn-close-cervix-modal"),
+  cervixChart: document.getElementById("cervix-chart"),
+  cervixTableWrap: document.getElementById("cervix-table-wrap"),
+  cervixTableBody: document.getElementById("cervix-table-body"),
+  cervixEmpty: document.getElementById("cervix-empty"),
   tableBody: document.getElementById("visits-table"),
   empty: document.getElementById("empty-state"),
   labelFamily: document.getElementById("label-family-id"),
@@ -106,6 +112,12 @@ el.btnCreateFamily.addEventListener("click", () => createAndJoin());
 el.btnJoinFamily.addEventListener("click", () => joinByInput());
 el.btnCopyLink.addEventListener("click", () => copyInviteLink());
 el.btnFamilyChip.addEventListener("click", () => copyInviteLink());
+el.btnCloseCervixModal.addEventListener("click", () => closeCervixModal());
+el.cervixModal.addEventListener("click", (event) => {
+  if (event.target === el.cervixModal) {
+    closeCervixModal();
+  }
+});
 el.btnCancelForm.addEventListener("click", () => showList());
 el.btnEdit.addEventListener("click", () => editSelected());
 el.btnBack.addEventListener("click", () => showList());
@@ -182,6 +194,20 @@ el.tableBody.addEventListener("click", (event) => {
   }
   state.selectedId = row.dataset.id;
   showDetail();
+});
+
+el.detailSummary.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action='open-cervix-chart']");
+  if (!button) {
+    return;
+  }
+  openCervixModal();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && isCervixModalOpen()) {
+    closeCervixModal();
+  }
 });
 
 async function createAndJoin() {
@@ -331,6 +357,7 @@ function showList() {
   setActiveView("view-list");
   el.btnAddFab.style.display = "flex";
   state.selectedId = null;
+  closeCervixModal();
 }
 
 function openForm() {
@@ -523,7 +550,60 @@ function leaveFamily() {
     state.unsubscribeFamily();
     state.unsubscribeFamily = null;
   }
+  closeCervixModal();
   showSetup();
+}
+
+function openCervixModal() {
+  const rows = getCervixRows();
+  renderCervixTable(rows);
+  renderCervixChart(el.cervixChart, rows);
+  const hasRows = rows.length > 0;
+  el.cervixEmpty.style.display = hasRows ? "none" : "block";
+  el.cervixChart.style.display = hasRows ? "block" : "none";
+  el.cervixTableWrap.style.display = hasRows ? "block" : "none";
+  el.cervixModal.classList.add("open");
+  el.cervixModal.setAttribute("aria-hidden", "false");
+}
+
+function closeCervixModal() {
+  el.cervixModal.classList.remove("open");
+  el.cervixModal.setAttribute("aria-hidden", "true");
+}
+
+function isCervixModalOpen() {
+  return el.cervixModal.classList.contains("open");
+}
+
+function getCervixRows() {
+  return [...state.visits]
+    .map((visit) => {
+      const value = Number(visit?.cervixMm);
+      if (!Number.isFinite(value) || value <= 0) {
+        return null;
+      }
+      const gaText = gaTextFromDates(visit?.date, state.dueDate) || visit?.gaText || "";
+      return {
+        date: visit?.date || "",
+        gaText,
+        cervixMm: value
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+}
+
+function renderCervixTable(rows) {
+  el.cervixTableBody.innerHTML = "";
+  for (const row of rows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(row.date)}</td>
+      <td>${escapeHtml(row.gaText)}</td>
+      <td>${Number(row.cervixMm).toFixed(1)}</td>
+    `;
+    el.cervixTableBody.appendChild(tr);
+  }
 }
 
 function renderRecentFamilies() {
@@ -592,4 +672,13 @@ function todayDateString() {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#039;");
 }
