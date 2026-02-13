@@ -9,24 +9,73 @@
   query,
   orderBy,
   getDocs,
+  getDoc,
   arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import { serverTimestamp } from "./firebase.js";
 
-export async function createFamily(db, user, familyId) {
+export async function createFamily(db, user, familyId, password) {
   const ref = doc(db, "families", familyId);
+  const existing = await getDoc(ref);
+  if (existing.exists()) {
+    throw new Error("family-already-exists");
+  }
   await setDoc(ref, {
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
     createdByUid: user.uid,
+    updatedByUid: user.uid,
     members: [user.uid],
-    lockCode: "0817"
-  }, { merge: true });
+    lockCode: password || "0817",
+    dueDate: null
+  });
 }
 
-export async function joinFamily(db, user, familyId) {
+export async function joinFamilyByInvite(db, user, familyId) {
   const ref = doc(db, "families", familyId);
-  await setDoc(ref, { createdAt: serverTimestamp() }, { merge: true });
-  await updateDoc(ref, { members: arrayUnion(user.uid) });
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    throw new Error("family-not-found");
+  }
+  await updateDoc(ref, {
+    members: arrayUnion(user.uid),
+    updatedAt: serverTimestamp(),
+    updatedByUid: user.uid
+  });
+}
+
+export async function joinFamilyWithPassword(db, user, familyId, password) {
+  const ref = doc(db, "families", familyId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    throw new Error("family-not-found");
+  }
+  const data = snap.data();
+  const expected = data?.lockCode || "0817";
+  if (!password || password !== expected) {
+    throw new Error("invalid-password");
+  }
+  await updateDoc(ref, {
+    members: arrayUnion(user.uid),
+    updatedAt: serverTimestamp(),
+    updatedByUid: user.uid
+  });
+}
+
+export function subscribeFamily(db, familyId, callback, onError) {
+  const ref = doc(db, "families", familyId);
+  return onSnapshot(ref, (snap) => {
+    callback(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+  }, onError);
+}
+
+export async function updateFamilySettings(db, familyId, user, data) {
+  const ref = doc(db, "families", familyId);
+  await setDoc(ref, {
+    ...data,
+    updatedAt: serverTimestamp(),
+    updatedByUid: user.uid
+  }, { merge: true });
 }
 
 export function subscribeVisits(db, familyId, callback) {

@@ -1,8 +1,11 @@
 ﻿import { initFirebase, getDb } from "./firebase.js";
 import {
   createFamily,
-  joinFamily,
+  joinFamilyByInvite,
+  joinFamilyWithPassword,
+  subscribeFamily,
   subscribeVisits,
+  updateFamilySettings,
   addVisit,
   updateVisit,
   deleteVisit,
@@ -14,6 +17,7 @@ import { buildVisitStats, gaTextFromDates } from "./calc.js";
 import { renderGrowthChart } from "./chart.js";
 
 const LS_FAMILY = "ttt_family_id";
+const LS_RECENT_FAMILIES = "ttt_recent_families";
 const LS_LOCK_ENABLED = "ttt_lock_enabled";
 const LS_LOCK_CODE = "ttt_lock_code";
 const LS_DUE_DATE = "ttt_due_date";
@@ -21,10 +25,12 @@ const LS_DUE_DATE = "ttt_due_date";
 const state = {
   user: null,
   familyId: null,
+  family: null,
   visits: [],
   stats: new Map(),
   selectedId: null,
-  unsubscribe: null,
+  unsubscribeVisits: null,
+  unsubscribeFamily: null,
   dueDate: null,
   editingVisit: null
 };
@@ -34,7 +40,12 @@ const el = {
   btnSettings: document.getElementById("btn-settings"),
   btnCreateFamily: document.getElementById("btn-create-family"),
   btnJoinFamily: document.getElementById("btn-join-family"),
+  inputCreateFamilyId: document.getElementById("input-create-family-id"),
+  inputCreateFamilyPass: document.getElementById("input-create-family-pass"),
+  selectFamilyId: document.getElementById("select-family-id"),
   inputFamilyId: document.getElementById("input-family-id"),
+  inputFamilyPass: document.getElementById("input-family-pass"),
+  btnFamilyChip: document.getElementById("btn-family-chip"),
   tableBody: document.getElementById("visits-table"),
   empty: document.getElementById("empty-state"),
   labelFamily: document.getElementById("label-family-id"),
@@ -59,15 +70,30 @@ const el = {
 
 initFirebase(async (user) => {
   state.user = user;
-  const familyFromUrl = new URLSearchParams(window.location.search).get("family");
-  const stored = localStorage.getItem(LS_FAMILY);
-  const familyId = familyFromUrl || stored;
-  if (familyId) {
-    await setFamilyId(familyId);
-  } else {
-    showSetup();
-  }
   setupSettings();
+  renderRecentFamilies();
+
+  const url = new URL(window.location.href);
+  const familyFromUrl = normalizeFamilyId(url.searchParams.get("family"));
+  const stored = normalizeFamilyId(localStorage.getItem(LS_FAMILY));
+
+  if (familyFromUrl) {
+    const joined = await trySetFamily(familyFromUrl, { mode: "invite" });
+    if (joined) {
+      url.searchParams.delete("family");
+      history.replaceState({}, "", url);
+      return;
+    }
+  }
+
+  if (stored) {
+    const resumed = await trySetFamily(stored, { mode: "stored" });
+    if (resumed) {
+      return;
+    }
+  }
+
+  showSetup();
 });
 
 if ("serviceWorker" in navigator) {
@@ -79,6 +105,7 @@ el.btnSettings.addEventListener("click", () => showSettings());
 el.btnCreateFamily.addEventListener("click", () => createAndJoin());
 el.btnJoinFamily.addEventListener("click", () => joinByInput());
 el.btnCopyLink.addEventListener("click", () => copyInviteLink());
+el.btnFamilyChip.addEventListener("click", () => copyInviteLink());
 el.btnCancelForm.addEventListener("click", () => showList());
 el.btnEdit.addEventListener("click", () => editSelected());
 el.btnBack.addEventListener("click", () => showList());
@@ -90,6 +117,12 @@ el.toggleLock.addEventListener("change", () => saveLockSettings());
 el.inputLockCode.addEventListener("change", () => saveLockSettings());
 el.inputDueDate.addEventListener("change", () => saveDueDate());
 el.form.date.addEventListener("change", () => updateDerivedGa());
+el.selectFamilyId.addEventListener("change", () => {
+  const value = normalizeFamilyId(el.selectFamilyId.value);
+  if (value) {
+    el.inputFamilyId.value = value;
+  }
+});
 
 el.form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -104,13 +137,19 @@ el.form.addEventListener("submit", async (event) => {
   } else if (state.editingVisit?.gaText) {
     data.gaText = state.editingVisit.gaText;
   }
-  const db = getDb();
-  if (state.selectedId) {
-    await updateVisit(db, state.familyId, state.user, state.selectedId, data);
-  } else {
-    await addVisit(db, state.familyId, state.user, data);
+
+  try {
+    const db = getDb();
+    if (state.selectedId) {
+      await updateVisit(db, state.familyId, state.user, state.selectedId, data);
+    } else {
+      await addVisit(db, state.familyId, state.user, data);
+    }
+    showList();
+  } catch (err) {
+    console.error(err);
+    alert("保存に失敗しました。通信状態を確認して再度お試しください。");
   }
-  showList();
 });
 
 el.btnDelete.addEventListener("click", async () => {
@@ -124,10 +163,16 @@ el.btnDelete.addEventListener("click", async () => {
   if (!ok) {
     return;
   }
-  const db = getDb();
-  await deleteVisit(db, state.familyId, state.selectedId);
-  state.selectedId = null;
-  showList();
+
+  try {
+    const db = getDb();
+    await deleteVisit(db, state.familyId, state.selectedId);
+    state.selectedId = null;
+    showList();
+  } catch (err) {
+    console.error(err);
+    alert("削除に失敗しました");
+  }
 });
 
 el.tableBody.addEventListener("click", (event) => {
@@ -140,35 +185,125 @@ el.tableBody.addEventListener("click", (event) => {
 });
 
 async function createAndJoin() {
-  const familyId = generateFamilyId();
-  const db = getDb();
-  await createFamily(db, state.user, familyId);
-  await setFamilyId(familyId);
+  const familyId = normalizeFamilyId(el.inputCreateFamilyId.value);
+  const password = String(el.inputCreateFamilyPass.value || "").trim();
+
+  if (!familyId || !isValidFamilyId(familyId)) {
+    alert("家族名は英数字3〜32文字で入力してください");
+    return;
+  }
+  if (!password) {
+    alert("家族パスワードを入力してください");
+    return;
+  }
+
+  try {
+    const db = getDb();
+    await createFamily(db, state.user, familyId, password);
+    await setFamily(familyId);
+    el.inputCreateFamilyPass.value = "";
+  } catch (err) {
+    console.error(err);
+    if (err?.message === "family-already-exists") {
+      alert("その家族名は既に使われています。別の名前を入力してください。");
+      return;
+    }
+    alert("家族作成に失敗しました");
+  }
 }
 
 async function joinByInput() {
-  const familyId = el.inputFamilyId.value.trim();
-  if (!familyId) {
-    alert("家族IDを入力してください");
+  const selectedFamily = normalizeFamilyId(el.selectFamilyId.value);
+  const inputFamily = normalizeFamilyId(el.inputFamilyId.value);
+  const familyId = inputFamily || selectedFamily;
+  const password = String(el.inputFamilyPass.value || "").trim();
+
+  if (!familyId || !isValidFamilyId(familyId)) {
+    alert("家族名は英数字3〜32文字で入力してください");
     return;
   }
-  await setFamilyId(familyId);
+  if (!password) {
+    alert("家族パスワードを入力してください");
+    return;
+  }
+
+  const joined = await trySetFamily(familyId, { mode: "manual", password });
+  if (joined) {
+    el.inputFamilyPass.value = "";
+  }
 }
 
-async function setFamilyId(familyId) {
+async function trySetFamily(familyId, options) {
+  try {
+    if (options?.mode === "invite") {
+      await joinFamilyByInvite(getDb(), state.user, familyId);
+    } else if (options?.mode === "manual") {
+      await joinFamilyWithPassword(getDb(), state.user, familyId, options.password);
+    }
+    await setFamily(familyId);
+    return true;
+  } catch (err) {
+    console.error(err);
+    handleJoinError(err, options?.mode);
+    return false;
+  }
+}
+
+function handleJoinError(err, mode) {
+  const code = err?.message || "";
+  if (code === "family-not-found") {
+    alert("家族名が見つかりません。招待リンクから参加するか、家族名を確認してください。");
+    return;
+  }
+  if (code === "invalid-password") {
+    alert("家族パスワードが正しくありません。");
+    return;
+  }
+  if (mode === "stored") {
+    alert("保存済みの家族に接続できませんでした。再参加してください。");
+    return;
+  }
+  alert("家族への参加に失敗しました");
+}
+
+async function setFamily(familyId) {
   state.familyId = familyId;
   localStorage.setItem(LS_FAMILY, familyId);
   setFamilyLabel(el.labelFamily, familyId);
-  await joinFamily(getDb(), state.user, familyId);
+  addRecentFamily(familyId);
+  renderRecentFamilies();
   subscribe();
   showList();
 }
 
 function subscribe() {
-  if (state.unsubscribe) {
-    state.unsubscribe();
+  if (state.unsubscribeVisits) {
+    state.unsubscribeVisits();
   }
-  state.unsubscribe = subscribeVisits(getDb(), state.familyId, (visits) => {
+  if (state.unsubscribeFamily) {
+    state.unsubscribeFamily();
+  }
+
+  state.unsubscribeFamily = subscribeFamily(
+    getDb(),
+    state.familyId,
+    (family) => {
+      state.family = family;
+      const incomingDueDate = family?.dueDate || null;
+      if (state.dueDate !== incomingDueDate) {
+        state.dueDate = incomingDueDate;
+        el.inputDueDate.value = incomingDueDate || "";
+        localStorage.setItem(LS_DUE_DATE, incomingDueDate || "");
+        refreshStats();
+      }
+    },
+    (err) => {
+      console.error(err);
+      alert("家族データの読み込みに失敗しました");
+    }
+  );
+
+  state.unsubscribeVisits = subscribeVisits(getDb(), state.familyId, (visits) => {
     state.visits = visits;
     state.stats = buildVisitStats(visits, state.dueDate);
     updateList();
@@ -200,7 +335,7 @@ function showList() {
 
 function openForm() {
   if (!state.familyId) {
-    alert("家族IDを設定してください");
+    alert("家族を設定してください");
     showSetup();
     return;
   }
@@ -244,19 +379,24 @@ function showSettings() {
 }
 
 async function handleExport() {
-  const visits = await exportVisits(getDb(), state.familyId);
-  const payload = {
-    familyId: state.familyId,
-    exportedAt: new Date().toISOString(),
-    visits
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `twin-visits-${state.familyId}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  try {
+    const visits = await exportVisits(getDb(), state.familyId);
+    const payload = {
+      familyId: state.familyId,
+      exportedAt: new Date().toISOString(),
+      visits
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `twin-visits-${state.familyId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    alert("エクスポートに失敗しました");
+  }
 }
 
 async function handleImport(event) {
@@ -282,6 +422,9 @@ async function handleImport(event) {
 }
 
 function copyInviteLink() {
+  if (!state.familyId) {
+    return;
+  }
   const url = new URL(window.location.href);
   url.searchParams.set("family", state.familyId);
   navigator.clipboard.writeText(url.toString()).then(() => {
@@ -308,12 +451,22 @@ function saveLockSettings() {
   localStorage.setItem(LS_LOCK_CODE, el.inputLockCode.value || "0817");
 }
 
-function saveDueDate() {
-  const value = el.inputDueDate.value;
-  state.dueDate = value || null;
+async function saveDueDate() {
+  const value = el.inputDueDate.value || null;
+  state.dueDate = value;
   localStorage.setItem(LS_DUE_DATE, value || "");
   refreshStats();
   updateDerivedGa();
+
+  if (!state.familyId) {
+    return;
+  }
+  try {
+    await updateFamilySettings(getDb(), state.familyId, state.user, { dueDate: value });
+  } catch (err) {
+    console.error(err);
+    alert("出産予定日の保存に失敗しました");
+  }
 }
 
 function refreshStats() {
@@ -353,28 +506,84 @@ function confirmLock() {
 }
 
 function leaveFamily() {
-  const ok = confirm("家族IDを削除して最初の画面に戻りますか？");
+  const ok = confirm("家族名を削除して最初の画面に戻りますか？");
   if (!ok) {
     return;
   }
   localStorage.removeItem(LS_FAMILY);
   state.familyId = null;
+  state.family = null;
   state.visits = [];
   state.selectedId = null;
-  if (state.unsubscribe) {
-    state.unsubscribe();
-    state.unsubscribe = null;
+  if (state.unsubscribeVisits) {
+    state.unsubscribeVisits();
+    state.unsubscribeVisits = null;
+  }
+  if (state.unsubscribeFamily) {
+    state.unsubscribeFamily();
+    state.unsubscribeFamily = null;
   }
   showSetup();
 }
 
-function generateFamilyId() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "";
-  for (let i = 0; i < 6; i += 1) {
-    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+function renderRecentFamilies() {
+  const ids = getRecentFamilies();
+  const current = normalizeFamilyId(el.selectFamilyId.value);
+  el.selectFamilyId.innerHTML = "";
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "選択してください";
+  el.selectFamilyId.appendChild(defaultOption);
+
+  for (const id of ids) {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = id;
+    el.selectFamilyId.appendChild(option);
   }
-  return out;
+
+  if (current && ids.includes(current)) {
+    el.selectFamilyId.value = current;
+  }
+}
+
+function addRecentFamily(familyId) {
+  const id = normalizeFamilyId(familyId);
+  if (!id) {
+    return;
+  }
+  const current = getRecentFamilies();
+  const next = [id, ...current.filter((item) => item !== id)].slice(0, 8);
+  localStorage.setItem(LS_RECENT_FAMILIES, JSON.stringify(next));
+}
+
+function getRecentFamilies() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_RECENT_FAMILIES) || "[]");
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+    return raw
+      .map((item) => normalizeFamilyId(item))
+      .filter((item) => isValidFamilyId(item));
+  } catch {
+    return [];
+  }
+}
+
+function normalizeFamilyId(value) {
+  if (!value) {
+    return "";
+  }
+  return String(value).trim();
+}
+
+function isValidFamilyId(value) {
+  if (!value) {
+    return false;
+  }
+  return /^[A-Za-z0-9]{3,32}$/.test(value);
 }
 
 function todayDateString() {

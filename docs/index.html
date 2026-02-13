@@ -37,15 +37,33 @@
         <div class="two-col">
           <div>
             <h2>家族を作る</h2>
-            <p class="muted">新しい家族IDを作成します。あとで招待リンクを共有できます。</p>
+            <p class="muted">英数字の家族名を作成します。あとで招待リンクを共有できます。</p>
+            <label class="field">
+              <span>家族名（英数字）</span>
+              <input id="input-create-family-id" type="text" placeholder="例: suzuki2026" />
+            </label>
+            <label class="field">
+              <span>家族パスワード</span>
+              <input id="input-create-family-pass" type="password" placeholder="例: 0817" />
+            </label>
             <button id="btn-create-family" class="btn">家族を作る</button>
           </div>
           <div>
             <h2>家族に参加</h2>
-            <p class="muted">家族IDまたは招待リンクから参加します。</p>
+            <p class="muted">招待リンクからの参加はパスワード不要です。手入力参加はパスワードが必要です。</p>
             <label class="field">
-              <span>家族ID</span>
-              <input id="input-family-id" type="text" placeholder="例: 7Q2D9A" />
+              <span>参加済み家族（この端末）</span>
+              <select id="select-family-id">
+                <option value="">選択してください</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>家族名（英数字）</span>
+              <input id="input-family-id" type="text" placeholder="例: suzuki2026" />
+            </label>
+            <label class="field">
+              <span>家族パスワード</span>
+              <input id="input-family-pass" type="password" placeholder="参加時のみ必要" />
             </label>
             <button id="btn-join-family" class="btn">参加する</button>
           </div>
@@ -56,9 +74,9 @@
     <section id="view-list" class="view">
       <div class="headline">
         <h1>健診一覧</h1>
-        <div class="family-chip">
+        <button id="btn-family-chip" class="family-chip" type="button" title="招待リンクをコピー">
           <span id="label-family-id">family</span>
-        </div>
+        </button>
       </div>
       <div class="card">
         <table class="table">
@@ -66,8 +84,7 @@
             <tr>
               <th>日付</th>
               <th>週数</th>
-              <th>A 推定体重(g)</th>
-              <th>B 推定体重(g)</th>
+              <th>A/B 推定体重(g)</th>
               <th>体重差(%)</th>
             </tr>
           </thead>

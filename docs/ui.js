@@ -19,8 +19,7 @@ export function renderVisits(tableBody, visits, statsMap, dueDate) {
     tr.innerHTML = `
       <td>${escapeHtml(visit.date || "")}</td>
       <td>${escapeHtml(gaText)}</td>
-      <td>${formatNumber(visit?.fetuses?.A?.efwG)}</td>
-      <td>${formatNumber(visit?.fetuses?.B?.efwG)}</td>
+      <td>A ${formatNumber(visit?.fetuses?.A?.efwG)} / B ${formatNumber(visit?.fetuses?.B?.efwG)}</td>
       <td>${formatNumber(discord, 1)}%</td>
     `;
     tableBody.appendChild(tr);

@@ -154,6 +154,15 @@ h2 {
   background: white;
 }
 
+.field select {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  font-size: 15px;
+  min-height: 40px;
+  background: white;
+}
+
 .readonly-value {
   min-height: 40px;
   display: flex;
@@ -259,6 +268,13 @@ h2 {
   border: 1px solid var(--line);
   padding: 8px 12px;
   border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+button.family-chip {
+  font: inherit;
 }
 
 .summary {
@@ -341,11 +357,10 @@ h2 {
     gap: 8px;
   }
 
-  .table th:nth-child(3),
-  .table th:nth-child(4),
-  .table td:nth-child(3),
-  .table td:nth-child(4) {
-    display: none;
+  .table th,
+  .table td {
+    white-space: nowrap;
+    font-size: 13px;
   }
 
   .summary-grid {
