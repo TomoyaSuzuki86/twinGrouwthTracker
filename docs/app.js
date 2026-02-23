@@ -388,7 +388,7 @@ function showDetail() {
   const visit = state.visits.find((item) => item.id === state.selectedId);
   const stats = state.stats.get(state.selectedId);
   renderDetail(el.detailSummary, visit, stats, state.dueDate);
-  renderGrowthChart(el.chart, state.visits, state.stats);
+  renderGrowthChart(el.chart, state.visits, state.stats, state.dueDate);
   setActiveView("view-detail");
   el.btnAddFab.style.display = "flex";
 }
@@ -582,7 +582,7 @@ function leaveFamily() {
 function openCervixModal() {
   const rows = getCervixRows();
   renderCervixTable(rows);
-  renderCervixChart(el.cervixChart, rows);
+  renderCervixChart(el.cervixChart, rows, state.dueDate);
   const hasRows = rows.length > 0;
   el.cervixEmpty.style.display = hasRows ? "none" : "block";
   el.cervixChart.style.display = hasRows ? "block" : "none";

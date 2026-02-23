@@ -49,7 +49,39 @@ bash scripts/deploy_firestore.sh
 
 - GitHub Pages の公開対象を `docs/` に設定
 
-## Firebase Hosting へデプロイ
+## ビルドと起動（確認方法）
+
+- このアプリは `HTML/CSS/JavaScript` の静的アプリなので、ビルドは不要です
+- `docs/` 配下をそのまま配信して動作します
+
+### ローカル起動（簡易確認）
+
+PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/dev_server.ps1
+```
+
+Bash:
+
+```bash
+bash scripts/dev_server.sh
+```
+
+- `http://localhost:8000` を開いて確認できます
+
+### Firebase Hosting でローカル確認
+
+`firebase.json` の Hosting 設定（`public: docs`）で起動します。
+
+```bash
+firebase emulators:start --only hosting
+```
+
+- 表示URLは通常 `http://127.0.0.1:5000`（または `http://localhost:5000`）です
+- 静的ファイルはローカル配信ですが、Firestore/Auth は通常どおり Firebase 本番プロジェクトを参照します
+
+### Firebase Hosting へ本番デプロイ
 
 `live` ターゲット（`twinrecho`）へデプロイする場合は、以下を実行します。
 
@@ -59,24 +91,10 @@ firebase deploy --only hosting:live
 
 ## 使い方
 
-- 初回は「家族を作る」を押して家族IDを生成
+- 初回は「家族を作る」を押して家族コードを作成
 - 共有したい端末には「招待リンク」を送る（`?family=...` 付き）
 - 健診データを追加するとリアルタイムで反映
 - 設定画面から JSON のエクスポート／インポートが可能
-
-## ローカル確認
-
-```bash
-bash scripts/dev_server.sh
-```
-
-`http://localhost:8000` を開いて確認できます。
-
-PowerShell:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/dev_server.ps1
-```
 
 ## データ構造（Firestore）
 
