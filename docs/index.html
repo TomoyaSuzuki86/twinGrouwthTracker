@@ -191,9 +191,27 @@
       </div>
       <div class="card">
         <div id="detail-summary" class="summary"></div>
+        <div class="chart-tap-hint">グラフをタップすると拡大表示できます</div>
         <canvas id="growth-chart" height="160"></canvas>
       </div>
     </section>
+
+    <div id="growth-modal" class="modal" aria-hidden="true">
+      <div class="modal-panel modal-panel-wide" role="dialog" aria-modal="true" aria-labelledby="growth-modal-title">
+        <div class="modal-head">
+          <h2 id="growth-modal-title">体重・体重差グラフ（拡大）</h2>
+          <button id="btn-close-growth-modal" class="btn ghost icon" type="button" aria-label="閉じる">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <div class="muted" style="margin-bottom:8px;">横にスクロールして全体を確認できます。</div>
+        <div id="growth-zoom-scroll" class="chart-scroll-wrap">
+          <div id="growth-zoom-inner" class="chart-zoom-inner">
+            <canvas id="growth-chart-zoom"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div id="cervix-modal" class="modal" aria-hidden="true">
       <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="cervix-modal-title">

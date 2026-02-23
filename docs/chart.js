@@ -1,17 +1,10 @@
 import { gaWeeksFromDates, parseGaText } from "./calc.js";
 
-let chartInstance;
-let cervixChartInstance;
-
-export function renderGrowthChart(canvas, visits, statsMap, dueDate) {
+export function renderGrowthChart(canvas, visits, statsMap, dueDate, options = {}) {
   if (!canvas || typeof Chart === "undefined") {
     return;
   }
   destroyChartOnCanvas(canvas);
-  if (chartInstance) {
-    chartInstance.destroy();
-    chartInstance = null;
-  }
 
   const ordered = [...visits].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
   const aData = ordered
@@ -35,7 +28,7 @@ export function renderGrowthChart(canvas, visits, statsMap, dueDate) {
   const timeAxis = buildTimeAxisConfig(ordered, dueDate);
   const useTimeAxis = !!timeAxis;
 
-  chartInstance = new Chart(canvas, {
+  new Chart(canvas, {
     type: "line",
     data: {
       datasets: [
@@ -77,6 +70,7 @@ export function renderGrowthChart(canvas, visits, statsMap, dueDate) {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: options.maintainAspectRatio ?? true,
       parsing: false,
       plugins: {
         legend: {
@@ -116,10 +110,6 @@ export function renderCervixChart(canvas, records, dueDate) {
     return;
   }
   destroyChartOnCanvas(canvas);
-  if (cervixChartInstance) {
-    cervixChartInstance.destroy();
-    cervixChartInstance = null;
-  }
 
   const filtered = Array.isArray(records)
     ? records.filter((item) => Number.isFinite(item?.cervixMm) && item.cervixMm > 0)
@@ -131,7 +121,7 @@ export function renderCervixChart(canvas, records, dueDate) {
   const values = filtered.map((item) => toPoint(item, dueDate, item.cervixMm)).filter(Boolean);
   const timeAxis = buildTimeAxisConfig(filtered, dueDate);
 
-  cervixChartInstance = new Chart(canvas, {
+  new Chart(canvas, {
     type: "line",
     data: {
       datasets: [

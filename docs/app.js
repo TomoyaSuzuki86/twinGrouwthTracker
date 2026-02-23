@@ -47,6 +47,11 @@ const el = {
   selectFamilyCode: document.getElementById("select-family-id"),
   inputFamilyCode: document.getElementById("input-family-id"),
   btnCopyFamilyLink: document.getElementById("btn-copy-family-link"),
+  growthModal: document.getElementById("growth-modal"),
+  btnCloseGrowthModal: document.getElementById("btn-close-growth-modal"),
+  growthZoomScroll: document.getElementById("growth-zoom-scroll"),
+  growthZoomInner: document.getElementById("growth-zoom-inner"),
+  growthZoomChart: document.getElementById("growth-chart-zoom"),
   cervixModal: document.getElementById("cervix-modal"),
   btnCloseCervixModal: document.getElementById("btn-close-cervix-modal"),
   cervixChart: document.getElementById("cervix-chart"),
@@ -116,6 +121,13 @@ el.btnJoinFamily.addEventListener("click", () => joinByCode());
 el.btnCopyLink.addEventListener("click", () => copyInviteLink());
 el.btnCopyFamilyLink.addEventListener("click", () => copyInviteLink());
 el.btnSaveFamilyCode.addEventListener("click", () => saveFamilyCode());
+el.chart.addEventListener("click", () => openGrowthModal());
+el.btnCloseGrowthModal.addEventListener("click", () => closeGrowthModal());
+el.growthModal.addEventListener("click", (event) => {
+  if (event.target === el.growthModal) {
+    closeGrowthModal();
+  }
+});
 el.btnCloseCervixModal.addEventListener("click", () => closeCervixModal());
 el.cervixModal.addEventListener("click", (event) => {
   if (event.target === el.cervixModal) {
@@ -209,7 +221,14 @@ el.detailSummary.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && isCervixModalOpen()) {
+  if (event.key !== "Escape") {
+    return;
+  }
+  if (isGrowthModalOpen()) {
+    closeGrowthModal();
+    return;
+  }
+  if (isCervixModalOpen()) {
     closeCervixModal();
   }
 });
@@ -350,6 +369,7 @@ function showList() {
   setActiveView("view-list");
   el.btnAddFab.style.display = "flex";
   state.selectedId = null;
+  closeGrowthModal();
   closeCervixModal();
 }
 
@@ -575,8 +595,46 @@ function leaveFamily() {
     state.unsubscribeFamily();
     state.unsubscribeFamily = null;
   }
+  closeGrowthModal();
   closeCervixModal();
   showSetup();
+}
+
+function openGrowthModal() {
+  if (!state.visits.length) {
+    return;
+  }
+  el.growthModal.classList.add("open");
+  el.growthModal.setAttribute("aria-hidden", "false");
+  requestAnimationFrame(() => {
+    resizeGrowthZoomCanvas();
+    renderGrowthChart(el.growthZoomChart, state.visits, state.stats, state.dueDate, { maintainAspectRatio: false });
+  });
+}
+
+function closeGrowthModal() {
+  el.growthModal.classList.remove("open");
+  el.growthModal.setAttribute("aria-hidden", "true");
+}
+
+function isGrowthModalOpen() {
+  return el.growthModal.classList.contains("open");
+}
+
+function resizeGrowthZoomCanvas() {
+  const viewportWidth = el.growthZoomScroll?.clientWidth || window.innerWidth || 360;
+  const dateValues = state.visits
+    .map((visit) => Date.parse(`${visit?.date || ""}T00:00:00`))
+    .filter((value) => Number.isFinite(value));
+  let spanDays = 0;
+  if (dateValues.length >= 2) {
+    spanDays = Math.round((Math.max(...dateValues) - Math.min(...dateValues)) / (1000 * 60 * 60 * 24));
+  }
+  const spanWeeks = Math.max(1, Math.ceil(spanDays / 7));
+  const width = Math.max(viewportWidth, 700, spanWeeks * 36, state.visits.length * 68);
+  if (el.growthZoomInner) {
+    el.growthZoomInner.style.width = `${width}px`;
+  }
 }
 
 function openCervixModal() {
